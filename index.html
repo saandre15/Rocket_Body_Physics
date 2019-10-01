@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Rocket Simulation</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body>
+  <div class="row text-center">
+    <div class="col">
+        <h1 class="display-4 my-5">Rocket Body Simulation</h1>
+        <canvas id="simulation" width="400" height="300" style="background-color: black">
+
+        </canvas>
+    </div>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <label for="">Equation</label>
+          <input type="text" class="form-control" readonly value="sqrt(A - Bt)">
+          <label for="">Time(s)</label>
+          <input type="text" class="form-control" readonly value="0.000">
+          <label for="">Position(m)</label>
+          <input type="text" class="form-control" readonly value="0, 0">
+          <label for="">Velocity(m/s)</label>
+          <input type="text" class="form-control" readonly value="0">
+          <label for="">Acceleration(m/s^2)</label>
+          <input type="text" class="form-control" readonly value="0">
+          <label for="">Mass(kg)</label>
+          <input type="text" class="form-control">
+          <label for="">A</label>
+          <input type="text" class="form-control">
+          <label for="">B</label>
+          <input type="text" class="form-control">
+          <div class="text-center mt-3">
+            <button class="btn btn-primary" id="start">
+              Start Rocket
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row text-center">
+    <div class="col">
+      <h1>Position</h1>
+        <canvas id="graph" width="400" height="300" style="background-color:black">
+  
+        </canvas>
+    </div>
+  </div>
+  <div class="row text-center">
+    <div class="col">
+      <h1>Velocity</h1>
+        <canvas id="graph" width="400" height="300" style="background-color:black">
+  
+        </canvas>
+    </div>
+  </div>
+  <div class="row text-center">
+    <div class="col">
+      <h1>Acceleration</h1>
+        <canvas id="graph" width="400" height="300" style="background-color:black">
+  
+        </canvas>
+    </div>
+  </div>
+</body>
+<!-- <script src="index.js" async="true"></script> -->
+</html>
