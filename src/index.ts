@@ -7,18 +7,19 @@ const state = {
   simulation: false
 }
 
+const starSprite = new Image(10, 10);
+starSprite.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
+const rocketSprite = new Image(30, 30);
+rocketSprite.src = "http://pngimg.com/uploads/rockets/rockets_PNG13291.png";
+const rocket = new Rocket(rocketSprite);
+const simulation = new Simulation(rocket, starSprite);
+simulation.init();
+
 start.addEventListener('click', () => {
-  const A: string = (document.getElementById('A') as HTMLFormElement).value;
-  const B: string =(document.getElementById('B') as HTMLFormElement).value;
-  const ANum: number = Number(A);
-  const BNum: number = Number(B);
-  main();
+  simulation.start();
 });
 
-function main(A: number, B: number) {
-  const sprite = new Image(15, 20);
-  sprite.src = "localhost/sprites/sprite.png";
-  const rocket = new Rocket(sprite, 12, 3, 5);
-  const simulation = new Simulation(rocket);
+function main(A: number, B: number, mass: number) {
+  simulation.setRocketValues(A, B, mass);
   simulation.draw();
 }

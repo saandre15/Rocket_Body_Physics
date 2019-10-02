@@ -3,11 +3,18 @@ export class Rocket {
   private yA: number;
   private mass: number;
   private yB: number;
-  constructor(sprite: HTMLImageElement, yA: number, yB: number, mass: number){
+  private sprite: HTMLImageElement;
+  constructor(sprite: HTMLImageElement){
+    this.sprite = sprite;
     this.position = new Point(0, 0);
+  }
+  setValues(yA: number, yB: number, mass: number) {
     this.yA = yA;
-    this.mass = mass;
     this.yB = yB;
+    this.mass = mass;
+  }
+  public getSprite() {
+    return this.sprite;
   }
   getCurForceY(time: number): number {
     return Math.sqrt(this.yA - (this.yB * time));
@@ -30,31 +37,125 @@ export class Simulation {
   private aGravity: number;
   private fGravity: number;
   private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
   private rocket: Rocket;
-  constructor(rocket: Rocket) {
+  private star: HTMLImageElement;
+  private starsPos: Point[];
+  constructor(rocket: Rocket, star: HTMLImageElement) {
     this.aGravity = -9.8;
     this.fGravity = this.aGravity * rocket.getMass();
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
+    const w: number = this.canvas.clientWidth;
+    const h: number = this.canvas.clientHeight;
+    this.canvas.width = w;
+    this.canvas.height = h;
+    this.ctx = this.canvas.getContext('2d');
     this.rocket = rocket;
+    this.star = star;
+    this.starsPos = [];
+  }
+  init() {
+    this.rocket.getSprite().addEventListener('load', () => {
+      console.log("Rocket Sprite loaded");
+      this.drawInitRocket();
+    });
+    this.star.addEventListener('load', () => {
+      console.log("Star Sprite loaded");
+      for(let i = 0 ; i < this.canvas.width; i++) {
+        for(let e = 0; e < this.canvas.height; e++) {
+           const rand: number = Math.round(Math.random() * 1000);
+           if(rand === 355) {
+            this.starsPos.push(new Point(i, e));
+            this.ctx.drawImage(this.star, i, e, 10, 10);
+           }
+        }
+      }
+    });
+  }
+  clearCanvas(): void {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+  redrawStars(): void {
+    for(let i = 0; i < this.starsPos.length; i++) {
+      const cur: Point = this.starsPos[i];
+      this.ctx.drawImage(this.star, cur.getX(), cur.getY(), 10, 10);
+    }
+  }
+  drawInitRocket(): void {
+    let sprite = this.rocket.getSprite();
+    const startPosX = (this.canvas.width / 10) * 4.5;
+    const startPosY = (this.canvas.height / 10) * 7;
+    this.ctx.drawImage(sprite, startPosX, startPosY, sprite.width, sprite.height);
+    this.ctx.fillStyle = "green";
+    this.ctx.fillRect(0, startPosY + 18, this.canvas.width, this.canvas.height);
+  }
+  setRocketValues(yA: number, yB: number, mass: number) {
+    this.rocket.setValues(yA, yB, mass);
+  }
+  start() {
+    const startPosX = (this.canvas.width / 10) * 4.4;
+    const startPosY = (this.canvas.height / 10) * 3;
+    const redraw = () => {
+      this.clearCanvas();
+      this.redrawStars();
+      this.drawInitRocket();
+      this.ctx.fillStyle = "white";
+      this.ctx.font = 'bold 60pt Arial';
+    }
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("3", startPosX, startPosY);
+    }, 1000);
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("2", startPosX, startPosY);
+    }, 2000);
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("1", startPosX, startPosY);
+    }, 3000);
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("START", startPosX - 100, startPosY);
+      setTimeout(() => {redraw();  this.draw()}, 1000);
+        //this.draw();
+    }, 4000);
   }
   draw() {
     const inc: number = 0.001;
     let stop: boolean = false;
-    while(!stop) {
-      let seconds: number = 0.0;
-      setInterval(() => {
-        this.redraw(seconds);
-        seconds += 0.001;
-        document.getElementById('acceleration');
-      }, 0.001);
-    }
+    let seconds: number = 0.0;
+    const interval = setInterval(() => {
+      //this.redraw(seconds);
+      if(seconds === 5)
+        clearInterval(interval);
+      this.clearCanvas();
+      this.redrawStars();
+      this.drawInitRocket();
+      this.redrawCalc(seconds);
+      seconds += 0.001;
+    }, 0.001);
   }
-  redraw(time: number) {
-    const rForceY = this.rocket.getCurForceY(time);
-    const tForceY = rForceY - this.fGravity;
-    const yVel = (tForceY * time) / this.rocket.getMass();
-    this.rocket.setPos(new Point(this.rocket.getPos().getX(), this.rocket.getPos().getY() + yVel));
+  redrawCalc(time: number) {
+    const textPlacementX: number = (this.canvas.width / 30);
+    const textPlacementY: number = (this.canvas.height / 10);
+    this.ctx.font = '20px Arial';
+    this.ctx.fillStyle = "white";
+    this.ctx.fillText("Time[s]", textPlacementX, textPlacementY + 0);
+    this.ctx.fillText(time.toFixed(4) + " s", textPlacementX, textPlacementY + 30);
+    this.ctx.fillText("Position[Y]", textPlacementX, textPlacementY + 60);
+    this.ctx.fillText("(m)", textPlacementX, textPlacementY + 90);
+    this.ctx.fillText("Velocity[Y]", textPlacementX, textPlacementY + 120);
+    this.ctx.fillText("(m/s)", textPlacementX, textPlacementY + 150);
+    this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
+    this.ctx.fillText("(m/s^2)", textPlacementX, textPlacementY + 210);
   }
+  // redraw(time: number) {
+  //   const rForceY = this.rocket.getCurForceY(time);
+  //   const tForceY = rForceY - this.fGravity;
+  //   const yVel = (tForceY * time) / this.rocket.getMass();
+  //   this.rocket.setPos(new Point(this.rocket.getPos().getX(), this.rocket.getPos().getY() + yVel));
+  // }
 }
 
 export class Point {

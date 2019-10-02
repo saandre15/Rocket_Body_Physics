@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "target": "es5",
+    "module": "esnext"
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "./src/*"
+  ]
+}
