@@ -1,7 +1,9 @@
 import { Rocket, Simulation } from "./simulation";
 
 const start: HTMLElement = document.getElementById('start');
-const end: HTMLElement= document.getElementById('end');
+const mass: HTMLInputElement = document.getElementById('mass') as HTMLInputElement;
+const A: HTMLInputElement = document.getElementById('a') as HTMLInputElement;
+const B: HTMLInputElement = document.getElementById('b') as HTMLInputElement;
 
 const state = {
   simulation: false
@@ -15,11 +17,18 @@ const rocket = new Rocket(rocketSprite);
 const simulation = new Simulation(rocket, starSprite);
 simulation.init();
 
-start.addEventListener('click', () => {
+start.addEventListener('click', (e: MouseEvent) => {
+  e.preventDefault();
+  const nMass: number = Number(mass.value);
+  const nA: number = Number(A.value);
+  let nB: number = Number(B.value);
+  if(!nMass || !nA) {
+    alert("Please make sure there is a valid number inputed into the mass, A, and B.");
+    return;
+  }
+  if(!nB)
+    nB = 0;
+  (<HTMLButtonElement>document.getElementById('start')).disabled = true;
+  simulation.setRocketValues(nA, nB, nMass);
   simulation.start();
 });
-
-function main(A: number, B: number, mass: number) {
-  simulation.setRocketValues(A, B, mass);
-  simulation.draw();
-}

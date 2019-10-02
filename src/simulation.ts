@@ -91,6 +91,7 @@ export class Simulation {
   }
   setRocketValues(yA: number, yB: number, mass: number) {
     this.rocket.setValues(yA, yB, mass);
+    this.fGravity = this.aGravity * this.rocket.getMass();
   }
   start() {
     const startPosX = (this.canvas.width / 10) * 4.4;
@@ -118,23 +119,27 @@ export class Simulation {
       redraw();
       this.ctx.fillText("START", startPosX - 100, startPosY);
       setTimeout(() => {redraw();  this.draw()}, 1000);
-        //this.draw();
     }, 4000);
   }
-  draw() {
-    const inc: number = 0.001;
-    let stop: boolean = false;
+  draw(): void {
+    const inc: number = 0.1;
     let seconds: number = 0.0;
+    let passInit: boolean = false;
     const interval = setInterval(() => {
-      //this.redraw(seconds);
-      if(seconds === 5)
+      console.log(this.getYDisplacement(seconds));
+      if(this.getYDisplacement(seconds) < 0) {
+        console.log("Clear interval");
         clearInterval(interval);
+      }
+      seconds += inc;
       this.clearCanvas();
       this.redrawStars();
       this.drawInitRocket();
       this.redrawCalc(seconds);
-      seconds += 0.001;
-    }, 0.001);
+      //this.redraw(seconds);
+      this.getYDisplacement(seconds, true);
+    }, inc);
+    return;
   }
   redrawCalc(time: number) {
     const textPlacementX: number = (this.canvas.width / 30);
@@ -144,18 +149,34 @@ export class Simulation {
     this.ctx.fillText("Time[s]", textPlacementX, textPlacementY + 0);
     this.ctx.fillText(time.toFixed(4) + " s", textPlacementX, textPlacementY + 30);
     this.ctx.fillText("Position[Y]", textPlacementX, textPlacementY + 60);
-    this.ctx.fillText("(m)", textPlacementX, textPlacementY + 90);
+    this.ctx.fillText(this.getYDisplacement(time) + "(m)", textPlacementX, textPlacementY + 90);
     this.ctx.fillText("Velocity[Y]", textPlacementX, textPlacementY + 120);
-    this.ctx.fillText("(m/s)", textPlacementX, textPlacementY + 150);
+    this.ctx.fillText(this.getYVel(time) + "(m/s)", textPlacementX, textPlacementY + 150);
     this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
-    this.ctx.fillText("(m/s^2)", textPlacementX, textPlacementY + 210);
+    this.ctx.fillText(this.getYAccel(time) + "(m/s^2)", textPlacementX, textPlacementY + 210);
   }
-  // redraw(time: number) {
-  //   const rForceY = this.rocket.getCurForceY(time);
-  //   const tForceY = rForceY - this.fGravity;
-  //   const yVel = (tForceY * time) / this.rocket.getMass();
-  //   this.rocket.setPos(new Point(this.rocket.getPos().getX(), this.rocket.getPos().getY() + yVel));
-  // }
+  redraw(time: number) {
+    const yVel = this.getYVel(time);
+    this.rocket.setPos(new Point(this.rocket.getPos().getX(), this.rocket.getPos().getY() + yVel));
+  }
+  private getYDisplacement(time: number, autoinc?: boolean): number {
+    const yDisplacement = this.rocket.getPos().getY() + this.getYVel(time);
+    if(autoinc)
+      this.rocket.setPos(new Point(this.rocket.getPos().getX(), yDisplacement));
+    return yDisplacement;
+  }
+  private getYVel(time: number): number {
+    const rForceY = this.rocket.getCurForceY(time);
+    const tForceY = rForceY + this.fGravity;
+    const yVel = (tForceY * time) / this.rocket.getMass();
+    return yVel;
+  }
+  private getYAccel(time: number): number {
+    const rForceY = this.rocket.getCurForceY(time);
+    const tForceY = rForceY + this.fGravity;
+    const yAccel = tForceY / this.rocket.getMass();
+    return yAccel;
+  }
 }
 
 export class Point {

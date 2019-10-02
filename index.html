@@ -15,62 +15,43 @@
     </div>
   </div>
   <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-8 text-center">
+      <div class="btn-group mb-3">
+        <button class="btn btn-primary active">Simulation Mode</button>
+        <button class="btn btn-primary">Graph Mode</button>
+      </div>
       <canvas id="simulation" class="w-100" style="background-color: black">
       </canvas>
     </div>
   </div>
-    <div class="row justify-content-center my-5">
-      <div class="col-md-8">
-        <div class="card">
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-4">
-                <label for="">Mass (kg)</label>
-                <input type="text" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label for="">A (Constant)</label>
-                <input type="text" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label for="">B (Constant)</label>
-                <input type="text" class="form-control">
-              </div>
+  <div class="row justify-content-center my-5">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <label for="">Mass (kg)</label>
+              <input type="text" class="form-control" id="mass" value="10">
             </div>
-            <div class="mt-3">
-              <button class="btn btn-primary" id="start">
-                Start Rocket
-              </button>
+            <div class="col-md-4">
+              <label for="">A (Constant)</label>
+              <input type="text" class="form-control" id="a" value="10000">
             </div>
+            <div class="col-md-4">
+              <label for="">B (Constant)</label>
+              <input type="text" class="form-control" id="b" value="100">
+            </div>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success" id="start">
+              <i class="fas fa-play mr-2"></i> Start Rocket
+            </button>
           </div>
         </div>
       </div>
     </div>
-  <div class="row text-center">
-    <div class="col">
-      <h1>Position</h1>
-        <canvas id="graph" width="400" height="300" style="background-color:black">
-  
-        </canvas>
-    </div>
-  </div>
-  <div class="row text-center">
-    <div class="col">
-      <h1>Velocity</h1>
-        <canvas id="graph" width="400" height="300" style="background-color:black">
-  
-        </canvas>
-    </div>
-  </div>
-  <div class="row text-center">
-    <div class="col">
-      <h1>Acceleration</h1>
-        <canvas id="graph" width="400" height="300" style="background-color:black">
-  
-        </canvas>
-    </div>
   </div>
 </body>
 <script src="index.js"></script>
+<script defer="" src="https://use.fontawesome.com/releases/v5.8.2/js/all.js" integrity="sha384-DJ25uNYET2XCl5ZF++U8eNxPWqcKohUUBUpKGlNLMchM7q4Wjg2CUpjHLaL8yYPH" crossorigin="anonymous"></script>
 </html>
