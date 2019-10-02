@@ -9,8 +9,6 @@ const state = {
   simulation: false
 }
 
-const starSprite = new Image(10, 10);
-starSprite.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
 const rocketSprite = new Image(30, 30);
 rocketSprite.src = "http://pngimg.com/uploads/rockets/rockets_PNG13291.png";
 const rocket = new Rocket(rocketSprite);

@@ -1,14 +1,17 @@
-export class Rocket {
-  private position: Point;
-  private yA: number;
-  private mass: number;
-  private yB: number;
-  private sprite: HTMLImageElement;
-  constructor(sprite: HTMLImageElement){
+class Object {
+  protected sprite: HTMLImageElement;
+  protected position: Point;
+  protected yA: number;
+  protected mass: number;
+  protected yB: number;
+  protected yForce: number;
+  protected gravityForce: number;
+  constructor(sprite: HTMLImageElement) {
     this.sprite = sprite;
-    this.position = new Point(0, 0);
+    this.position = new Point(0,0);
+    this.sprite.addEventListener('load', () => console.log("The object sprite has loaded."));
   }
-  setValues(yA: number, yB: number, mass: number) {
+  public setValues(yA: number, yB: number, mass: number) {
     this.yA = yA;
     this.yB = yB;
     this.mass = mass;
@@ -16,76 +19,108 @@ export class Rocket {
   public getSprite() {
     return this.sprite;
   }
-  getCurForceY(time: number): number {
+  public getCurForceY(time: number): number {
     return Math.sqrt(this.yA - (this.yB * time));
   }
-  getAccelY(time: number): number {
+  public getAccelY(time: number): number {
     return this.getCurForceY(time) / this.mass;
   }
-  getMass(): number {
+  public getMass(): number {
     return this.mass;
   }
-  setPos(point: Point): void {
+  public setPos(point: Point): void {
     this.position = point;
   }
-  getPos(): Point {
+  public getPos(): Point {
     return this.position;
+  }
+  public setYGravityForce(force: number): void {
+    this.gravityForce = force;
+  }
+}
+
+export class Planet {
+  private gravityAccel: number;
+  constructor(gravityAccel: number) {
+    this.gravityAccel = gravityAccel;
+  }
+  public getObjGravForce(mass: number) {
+    return this.gravityAccel * mass;
+  }
+}
+
+export interface IStars {
+  image: HTMLImageElement,
+  positions: Point[];
+}
+
+export class Stars implements IStars {
+  image: HTMLImageElement;
+  positions: Point[]
+  constructor(image: HTMLImageElement, positions: Point[]) {
+    this.image = image;
+    this.positions = positions;
+  }
+  public arrange(width: number, height: number): void {
+    for(let i = 0 ; i < width; i++) {
+      for(let e = 0; e < height; e++) {
+         const rand: number = Math.round(Math.random() * 1000);
+         if(rand === 355) {
+          this.positions.push(new Point(i, e));
+         }
+      }
+    }
   }
 }
 
 export class Simulation {
-  private aGravity: number;
-  private fGravity: number;
+  private earth: Planet;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private rocket: Rocket;
-  private star: HTMLImageElement;
-  private starsPos: Point[];
-  constructor(rocket: Rocket, star: HTMLImageElement) {
-    this.aGravity = -9.8;
-    this.fGravity = this.aGravity * rocket.getMass();
+  private objs: Object[];
+  private stars: Stars;
+  constructor(objs: Object[]) {
+    this.earth = new Planet(-9.8);
+    this.objs = objs;
+    for(let i = 0 ; i < this.objs.length; i++) {
+      const cur: Object = this.objs[i];
+      cur.setYGravityForce(this.earth.getObjGravForce(cur.getMass()));
+    }
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
     const w: number = this.canvas.clientWidth;
     const h: number = this.canvas.clientHeight;
     this.canvas.width = w;
     this.canvas.height = h;
     this.ctx = this.canvas.getContext('2d');
-    this.rocket = rocket;
-    this.star = star;
-    this.starsPos = [];
+    this.stars.image = new Image(10, 10);
+    this.stars.image.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
+    this.stars.positions = [];
+    this.stars.arrange(this.canvas.width, this.canvas.height);
   }
-  init() {
-    this.rocket.getSprite().addEventListener('load', () => {
-      console.log("Rocket Sprite loaded");
-      this.drawInitRocket();
-    });
-    this.star.addEventListener('load', () => {
-      console.log("Star Sprite loaded");
-      for(let i = 0 ; i < this.canvas.width; i++) {
-        for(let e = 0; e < this.canvas.height; e++) {
-           const rand: number = Math.round(Math.random() * 1000);
-           if(rand === 355) {
-            this.starsPos.push(new Point(i, e));
-            this.ctx.drawImage(this.star, i, e, 10, 10);
-           }
-        }
-      }
-    });
+  public init() {
+    this.drawStars();
+    this.drawLandscape();
+    this.drawPosition(0);
   }
-  clearCanvas(): void {
+  private clearCanvas(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
-  redrawStars(): void {
-    for(let i = 0; i < this.starsPos.length; i++) {
-      const cur: Point = this.starsPos[i];
-      this.ctx.drawImage(this.star, cur.getX(), cur.getY(), 10, 10);
+  private drawStars(): void {
+    for(let i = 0; i < this.stars.positions.length; i++) {
+      const cur: Point = this.stars.positions[i];
+      this.ctx.drawImage(this.stars.image, cur.getX(), cur.getY(), 10, 10);
     }
   }
-  drawInitRocket(): void {
-    let sprite = this.rocket.getSprite();
+  private drawPosition(): void {
     const startPosX = (this.canvas.width / 10) * 4.5;
     const startPosY = (this.canvas.height / 10) * 7;
-    this.ctx.drawImage(sprite, startPosX, startPosY, sprite.width, sprite.height);
+    for(let i = 0 ; i < this.objs.length; i++) {
+      const cur: Object = this.objs[i];
+      const yPos: Point = cur.getPos();
+      this.ctx.drawImage(cur.getSprite(), startPosX, startPosY, cur.getSprite().width, cur.getSprite().height);
+    }
+  }
+  private drawLandscape() {
     this.ctx.fillStyle = "green";
     this.ctx.fillRect(0, startPosY + 18, this.canvas.width, this.canvas.height);
   }
@@ -93,13 +128,13 @@ export class Simulation {
     this.rocket.setValues(yA, yB, mass);
     this.fGravity = this.aGravity * this.rocket.getMass();
   }
-  start() {
+  public start() {
     const startPosX = (this.canvas.width / 10) * 4.4;
     const startPosY = (this.canvas.height / 10) * 3;
     const redraw = () => {
       this.clearCanvas();
-      this.redrawStars();
-      this.drawInitRocket();
+      this.drawStars();
+      this.drawPosition();
       this.ctx.fillStyle = "white";
       this.ctx.font = 'bold 60pt Arial';
     }
@@ -121,7 +156,7 @@ export class Simulation {
       setTimeout(() => {redraw();  this.draw()}, 1000);
     }, 4000);
   }
-  draw(): void {
+  private draw(): void {
     const inc: number = 0.1;
     let seconds: number = 0.0;
     let passInit: boolean = false;
@@ -133,15 +168,14 @@ export class Simulation {
       }
       seconds += inc;
       this.clearCanvas();
-      this.redrawStars();
-      this.drawInitRocket();
-      this.redrawCalc(seconds);
-      //this.redraw(seconds);
+      this.drawStars();
+      this.drawObjs(seconds);
+      this.redrawCalc(this.objs[0], seconds);
       this.getYDisplacement(seconds, true);
     }, inc);
     return;
   }
-  redrawCalc(time: number) {
+  redrawCalc(obj: Object, time: number) {
     const textPlacementX: number = (this.canvas.width / 30);
     const textPlacementY: number = (this.canvas.height / 10);
     this.ctx.font = '20px Arial';
