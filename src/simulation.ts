@@ -45,15 +45,19 @@ export class Rocket extends Object {
   private parachuteMode: boolean;
   constructor(x: number, y:number) {
     const sprite = new Image(30, 30);
-    sprite.src = "http://pngimg.com/uploads/rockets/rockets_PNG13291.png";
+    sprite.src = "https://drive.google.com/uc?export=view&id=1p5huN9IbFfPHRtKVC6E_Q4cgJN336ADt";
     super(sprite, x, y);
     const parachute = new Image(40, 40);
-    parachute.src = "https://jloog.com/images/parachute-clipart-transparent-6.png";
+    parachute.src = "https://drive.google.com/uc?export=view&id=1gwtaDwG3_D_1OJmImbBtUUtUlrlNKtRl";
     this.parachute = parachute;
     this.parachuteMode = false;
   }
   public getCurForceY(): number {
-    return Math.sqrt(this.yA - (this.yB * this.time));
+    const force: number = Math.sqrt(this.yA - (this.yB * this.time));
+    if(isNaN(force))
+      return 0;
+    else
+      return force;
   }
   public setValues(yA: number, yB: number, mass: number) {
     this.yA = yA;
@@ -107,7 +111,7 @@ export class Planet {
       const cur: Object = this.objs[i];
       const pos: Point = cur.getPos();
       // Increment time
-      this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i]);
+      this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i], this.velocities[i]);
       this.accelerations[i] = this.getObjNetAccelY(i);
       if(this.getNetVelocity(i) < 0 && cur instanceof Rocket)
         cur.activateParachute()
@@ -134,10 +138,10 @@ export class Planet {
   }
   // this wont work because it taking the net force at this time and mutiplying with all time
   // return (nForce * this.time) / obj.getMass();
-  public getObjNetVelY(index: number, time: number, prevTime: number, prevAccel: number): number {
+  public getObjNetVelY(index: number, time: number, prevTime: number, prevAccel: number, prevVel: number): number {
     // take the time inc * ( ( accel of now + accel of next inc )  / 2)
     this.objs[index].setTime(time);
-    const cur: number = ( time - prevTime ) * ((this.getObjNetAccelY(index) + prevAccel) / 2);
+    const cur: number = ( time - prevTime ) * ((this.getObjNetAccelY(index) + prevAccel) / 2) + prevVel;
     return cur;
   }
   public getNetVelocity(index: number): number {
@@ -157,7 +161,7 @@ export class Stars {
     this.ready = false;
     this.positions = [];
     this.image = new Image(10, 10);
-    this.image.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
+    this.image.src = "https://drive.google.com/uc?export=view&id=1ACupvOABzxwP1AL8EvL-iyFokYMPHNIN";
     this.image.addEventListener('load' , () => this.ready = true);
   }
   public arrange(width: number, height: number): void {
@@ -195,6 +199,14 @@ export class Simulation {
     this.stars = new Stars();
     this.stars.arrange(this.canvas.width, this.canvas.height);
   }
+  public resetCanvas() : void {
+    this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
+    const w: number = this.canvas.clientWidth;
+    const h: number = this.canvas.clientHeight;
+    this.canvas.width = w;
+    this.canvas.height = h;
+    this.ctx = this.canvas.getContext('2d');
+  }
   public init() {
     this.drawStars();
     this.drawPosition();
@@ -214,14 +226,15 @@ export class Simulation {
   private drawPosition(): void {
     const startPosX = (this.canvas.width / 10) * 4.5;
     const startPosY = (this.canvas.height / 10) * 7;
+    const scale: number = 1000;
     for(let i = 0 ; i < this.earth.getObjs().length; i++) {
       const cur: Object = this.earth.getObjs()[i];
       const position: Point = cur.getPos();
-      this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY()), cur.getSprite().width, cur.getSprite().height);
+      this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY() / scale), cur.getSprite().width, cur.getSprite().height);
       if(cur instanceof Rocket) {
         const parachute: HTMLImageElement = cur.getParachute();
         if(cur.hasParachute())
-          this.ctx.drawImage(parachute, startPosX - 5, startPosY - (position.getY()) - 30, parachute.width, parachute.height);
+          this.ctx.drawImage(parachute, startPosX - 5, startPosY - ((position.getY() / scale)) - 30 , parachute.width, parachute.height);
       }
     }
   }
@@ -289,6 +302,7 @@ export class Simulation {
   private draw(): void {
     const inc: number = 0.1;
     let seconds: number = 0.0;
+    let prevDist: number = 0;
     const interval = setInterval(() => {
       //if(this.getYDisplacement(seconds) < 0) {
       //  console.log("Clear interval");
@@ -300,14 +314,18 @@ export class Simulation {
       this.drawPosition();
       this.drawLandscape();
       this.drawCalc(0);
-      if(isNaN(this.earth.getObjs()[0].getPos().getY())) {
-        alert("Simulation is unable to process unreal number! Please change the value of A and B.");
-        clearInterval(interval);
-      }
-      if(this.earth.getObjs()[0].getPos().getY() < 0) {
+      const displace: number = this.earth.getObjs()[0].getPos().getY();
+      if(displace < 0) {
+        this.earth.getObjs()[0].getPos().setY(0);
+        this.clearCanvas();
+        this.drawStars();
+        this.drawPosition();
+        this.drawLandscape();
+        this.drawCalc(0);
         alert("Simulation is complete the rocket is back on the surface. If your rocket didn't move there isn't enough force to propel it up.");
         clearInterval(interval);
       }
+      prevDist = displace;
       this.earth.setTime(seconds);
     }, inc);
     return;

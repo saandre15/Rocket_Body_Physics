@@ -104,6 +104,8 @@ var A = document.getElementById('a');
 var B = document.getElementById('b');
 var AirResToggle = document.getElementById('air_resistance');
 var ParchuteToggle = document.getElementById('parachute');
+var SimulationToggle = document.getElementById('simulation_toggle');
+var GraphToggle = document.getElementById('graph_toggle');
 var state = {
     simulation: false,
     air_resistance: false,
@@ -112,6 +114,8 @@ var state = {
 var rocket = new _simulation__WEBPACK_IMPORTED_MODULE_0__["Rocket"](0, 0);
 var simulation = new _simulation__WEBPACK_IMPORTED_MODULE_0__["Simulation"]([rocket]);
 simulation.init();
+window.addEventListener('load', function (e) {
+});
 start.addEventListener('click', function (e) {
     e.preventDefault();
     AirResToggle.disabled = true;
@@ -137,6 +141,44 @@ AirResToggle.addEventListener('click', function (e) {
 ParchuteToggle.addEventListener('click', function (e) {
     state.parachute = !state.parachute;
     simulation.drawToggle(state.air_resistance, state.parachute);
+});
+SimulationToggle.addEventListener('click', function (e) {
+    // Render Simulation
+    if (document.getElementById('simulation')) {
+        console.log(document.getElementById('simulation'));
+        return;
+    }
+    else {
+        var child = document.getElementById('graph');
+        var parent_1 = child.parentNode;
+        parent_1.removeChild(child);
+        var sim = document.createElement('canvas');
+        sim.id = 'simulation';
+        sim.className = 'w-100';
+        sim.style.backgroundColor = 'black';
+        parent_1.appendChild(sim);
+        simulation.resetCanvas();
+        simulation.init();
+    }
+});
+GraphToggle.addEventListener('click', function (e) {
+    if (document.getElementById('graph')) {
+        console.log(document.getElementById('graph'));
+        return;
+    }
+    else {
+        var child = document.getElementById('simulation');
+        var parent_2 = child.parentNode;
+        parent_2.removeChild(child);
+        var graph = document.createElement('canvas');
+        graph.id = 'graph';
+        graph.className = 'w-100';
+        graph.style.backgroundColor = 'blue';
+        parent_2.appendChild(graph);
+        var parentEl = graph.parentElement;
+        var buttons = "<div class=\"btn-group mb-3\">\n      <button class=\"btn btn-primary active\" id=\"simulation_toggle\">Simulation Mode</button>\n      <button class=\"btn btn-primary\" id=\"graph_toggle\">Graph Mode</button>\n      </div>";
+        parentEl.insertAdjacentHTML('beforeend', buttons);
+    }
 });
 
 
@@ -209,16 +251,20 @@ var Rocket = /** @class */ (function (_super) {
     function Rocket(x, y) {
         var _this = this;
         var sprite = new Image(30, 30);
-        sprite.src = "http://pngimg.com/uploads/rockets/rockets_PNG13291.png";
+        sprite.src = "https://drive.google.com/uc?export=view&id=1p5huN9IbFfPHRtKVC6E_Q4cgJN336ADt";
         _this = _super.call(this, sprite, x, y) || this;
         var parachute = new Image(40, 40);
-        parachute.src = "https://jloog.com/images/parachute-clipart-transparent-6.png";
+        parachute.src = "https://drive.google.com/uc?export=view&id=1gwtaDwG3_D_1OJmImbBtUUtUlrlNKtRl";
         _this.parachute = parachute;
         _this.parachuteMode = false;
         return _this;
     }
     Rocket.prototype.getCurForceY = function () {
-        return Math.sqrt(this.yA - (this.yB * this.time));
+        var force = Math.sqrt(this.yA - (this.yB * this.time));
+        if (isNaN(force))
+            return 0;
+        else
+            return force;
     };
     Rocket.prototype.setValues = function (yA, yB, mass) {
         this.yA = yA;
@@ -267,7 +313,7 @@ var Planet = /** @class */ (function () {
             var cur = this.objs[i];
             var pos = cur.getPos();
             // Increment time
-            this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i]);
+            this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i], this.velocities[i]);
             this.accelerations[i] = this.getObjNetAccelY(i);
             if (this.getNetVelocity(i) < 0 && cur instanceof Rocket)
                 cur.activateParachute();
@@ -294,10 +340,10 @@ var Planet = /** @class */ (function () {
     };
     // this wont work because it taking the net force at this time and mutiplying with all time
     // return (nForce * this.time) / obj.getMass();
-    Planet.prototype.getObjNetVelY = function (index, time, prevTime, prevAccel) {
+    Planet.prototype.getObjNetVelY = function (index, time, prevTime, prevAccel, prevVel) {
         // take the time inc * ( ( accel of now + accel of next inc )  / 2)
         this.objs[index].setTime(time);
-        var cur = (time - prevTime) * ((this.getObjNetAccelY(index) + prevAccel) / 2);
+        var cur = (time - prevTime) * ((this.getObjNetAccelY(index) + prevAccel) / 2) + prevVel;
         return cur;
     };
     Planet.prototype.getNetVelocity = function (index) {
@@ -315,7 +361,7 @@ var Stars = /** @class */ (function () {
         this.ready = false;
         this.positions = [];
         this.image = new Image(10, 10);
-        this.image.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
+        this.image.src = "https://drive.google.com/uc?export=view&id=1ACupvOABzxwP1AL8EvL-iyFokYMPHNIN";
         this.image.addEventListener('load', function () { return _this.ready = true; });
     }
     Stars.prototype.arrange = function (width, height) {
@@ -350,6 +396,14 @@ var Simulation = /** @class */ (function () {
         this.stars = new Stars();
         this.stars.arrange(this.canvas.width, this.canvas.height);
     }
+    Simulation.prototype.resetCanvas = function () {
+        this.canvas = document.getElementById('simulation');
+        var w = this.canvas.clientWidth;
+        var h = this.canvas.clientHeight;
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.ctx = this.canvas.getContext('2d');
+    };
     Simulation.prototype.init = function () {
         this.drawStars();
         this.drawPosition();
@@ -369,14 +423,15 @@ var Simulation = /** @class */ (function () {
     Simulation.prototype.drawPosition = function () {
         var startPosX = (this.canvas.width / 10) * 4.5;
         var startPosY = (this.canvas.height / 10) * 7;
+        var scale = 1000;
         for (var i = 0; i < this.earth.getObjs().length; i++) {
             var cur = this.earth.getObjs()[i];
             var position = cur.getPos();
-            this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY()), cur.getSprite().width, cur.getSprite().height);
+            this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY() / scale), cur.getSprite().width, cur.getSprite().height);
             if (cur instanceof Rocket) {
                 var parachute = cur.getParachute();
                 if (cur.hasParachute())
-                    this.ctx.drawImage(parachute, startPosX - 5, startPosY - (position.getY()) - 30, parachute.width, parachute.height);
+                    this.ctx.drawImage(parachute, startPosX - 5, startPosY - ((position.getY() / scale)) - 30, parachute.width, parachute.height);
             }
         }
     };
@@ -446,6 +501,7 @@ var Simulation = /** @class */ (function () {
         var _this = this;
         var inc = 0.1;
         var seconds = 0.0;
+        var prevDist = 0;
         var interval = setInterval(function () {
             //if(this.getYDisplacement(seconds) < 0) {
             //  console.log("Clear interval");
@@ -457,14 +513,18 @@ var Simulation = /** @class */ (function () {
             _this.drawPosition();
             _this.drawLandscape();
             _this.drawCalc(0);
-            if (isNaN(_this.earth.getObjs()[0].getPos().getY())) {
-                alert("Simulation is unable to process unreal number! Please change the value of A and B.");
-                clearInterval(interval);
-            }
-            if (_this.earth.getObjs()[0].getPos().getY() < 0) {
+            var displace = _this.earth.getObjs()[0].getPos().getY();
+            if (displace < 0) {
+                _this.earth.getObjs()[0].getPos().setY(0);
+                _this.clearCanvas();
+                _this.drawStars();
+                _this.drawPosition();
+                _this.drawLandscape();
+                _this.drawCalc(0);
                 alert("Simulation is complete the rocket is back on the surface. If your rocket didn't move there isn't enough force to propel it up.");
                 clearInterval(interval);
             }
+            prevDist = displace;
             _this.earth.setTime(seconds);
         }, inc);
         return;
