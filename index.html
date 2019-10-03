@@ -28,24 +28,55 @@
     <div class="col-md-8">
       <div class="card">
         <div class="card-body">
+            <div class="row mb-5">
+              <div class="col text-center">
+                <button class="btn btn-success" id="start">
+                  <i class="fas fa-play mr-2"></i> Start
+                </button>
+                <button class="btn btn-danger" id="restart">
+                  <i class="fas fa-power-off mr-2"></i> Restart
+                </button>
+                <button class="btn btn-primary" id="air_resistance">
+                  <i class="fas fa-toggle-on mr-2"></i> Toggle Air Resistance
+                </button>
+                <button class="btn btn-primary" id="parachute">
+                  <i class="fas fa-toggle-on mr-2"></i> Toggle Parachute
+                </button>
+              </div>
+            </div>
           <div class="row">
+            <div class="col">
+              <h2 class="font-weight-bold">Standard Control</h2>
+            </div>
+          </div>
+          <div class="row mb-5">
             <div class="col-md-4">
               <label for="">Mass (kg)</label>
               <input type="text" class="form-control" id="mass" value="10">
             </div>
             <div class="col-md-4">
               <label for="">A (Constant)</label>
-              <input type="text" class="form-control" id="a" value="10000">
+              <input type="text" class="form-control" id="a" value="50000">
             </div>
             <div class="col-md-4">
               <label for="">B (Constant)</label>
-              <input type="text" class="form-control" id="b" value="100">
+              <input type="text" class="form-control" id="b" value="1000">
             </div>
           </div>
-          <div class="mt-3">
-            <button class="btn btn-success" id="start">
-              <i class="fas fa-play mr-2"></i> Start Rocket
-            </button>
+          <div class="row">
+              <div class="col">
+                <h2 class="font-weight-bold">Special Control</h2>
+              </div>
+            </div>
+          <div class="row">
+            <div class="col-md-4">
+              <label for="">Air Resistance (b)</label>
+              <input type="text" class="form-control" id="mass" value="10">
+            </div>
+            <div class="col-md-4">
+              <label for="">Parachute Drag Force (c)</label>
+              <input type="text" class="form-control" id="a" value="100">
+            </div>
           </div>
         </div>
       </div>

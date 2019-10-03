@@ -1,29 +1,28 @@
 class Object {
   protected sprite: HTMLImageElement;
   protected position: Point;
-  protected yA: number;
   protected mass: number;
-  protected yB: number;
   protected yForce: number;
-  protected gravityForce: number;
-  constructor(sprite: HTMLImageElement) {
+  protected ready: boolean;
+  protected time: number;
+  constructor(sprite: HTMLImageElement, x: number, y: number) {
+    this.time = 0;
+    this.ready = false;
     this.sprite = sprite;
-    this.position = new Point(0,0);
-    this.sprite.addEventListener('load', () => console.log("The object sprite has loaded."));
-  }
-  public setValues(yA: number, yB: number, mass: number) {
-    this.yA = yA;
-    this.yB = yB;
-    this.mass = mass;
+    this.position = new Point(x, y);
+    this.sprite.addEventListener('load', () => this.ready = true);
   }
   public getSprite() {
     return this.sprite;
   }
-  public getCurForceY(time: number): number {
-    return Math.sqrt(this.yA - (this.yB * time));
+  public getCurForceY(): number {
+    return -1;
   }
-  public getAccelY(time: number): number {
-    return this.getCurForceY(time) / this.mass;
+  public getAccelY(): number {
+    return this.getCurForceY() / this.mass;
+  }
+  public getVeloY(): number {
+    return (this.getCurForceY() * this.time) / this.mass;
   }
   public getMass(): number {
     return this.mass;
@@ -34,32 +33,132 @@ class Object {
   public getPos(): Point {
     return this.position;
   }
-  public setYGravityForce(force: number): void {
-    this.gravityForce = force;
+  public setTime(seconds: number) {
+    this.time = seconds;
+  }
+}
+
+export class Rocket extends Object {
+  protected yA: number;
+  protected yB: number;
+  private parachute: HTMLImageElement;
+  private parachuteMode: boolean;
+  constructor(x: number, y:number) {
+    const sprite = new Image(30, 30);
+    sprite.src = "http://pngimg.com/uploads/rockets/rockets_PNG13291.png";
+    super(sprite, x, y);
+    const parachute = new Image(40, 40);
+    parachute.src = "https://jloog.com/images/parachute-clipart-transparent-6.png";
+    this.parachute = parachute;
+    this.parachuteMode = false;
+  }
+  public getCurForceY(): number {
+    return Math.sqrt(this.yA - (this.yB * this.time));
+  }
+  public setValues(yA: number, yB: number, mass: number) {
+    this.yA = yA;
+    this.yB = yB;
+    this.mass = mass;
+  }
+  public activateParachute() {
+    this.parachuteMode = true;
+  }
+  public getParachute(): HTMLImageElement {
+    return this.parachute;
+  }
+  public hasParachute(): boolean {
+    return this.parachuteMode;
   }
 }
 
 export class Planet {
-  private gravityAccel: number;
-  constructor(gravityAccel: number) {
-    this.gravityAccel = gravityAccel;
+  private gAccel: number;
+  private airResB: number;
+  private objs: Object[];
+  private time: number;
+  private velocities: number[];
+  private accelerations: number[];
+  constructor(objs: Object[]) {
+    this.objs = objs;
+    this.time = 0;
+    this.gAccel = 0;
+    this.airResB = 0;
+    this.velocities = new Array<number>(this.objs.length);
+    this.accelerations = new Array<number>(this.objs.length);
+    for(let i = 0 ; i < this.objs.length; i++) {
+      this.velocities[i] = 0;
+      this.accelerations[i] = 0;
+    }
   }
-  public getObjGravForce(mass: number) {
-    return this.gravityAccel * mass;
+  public setGAccel(accel: number): void {
+    this.gAccel = accel;
+  }
+  public setAirResB(b: number): void {
+    this.airResB = b;
+  }
+  public getAirRes(time: number): number {
+    return this.airResB;
+  }
+  public getObjs(): Object[] {
+    return this.objs;
+  }
+  public setTime(seconds: number): void {
+    for (let i = 0; i < this.objs.length; i++) {
+      const cur: Object = this.objs[i];
+      const pos: Point = cur.getPos();
+      // Increment time
+      this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i]);
+      this.accelerations[i] = this.getObjNetAccelY(i);
+      if(this.getNetVelocity(i) < 0 && cur instanceof Rocket)
+        cur.activateParachute()
+      const displaceY: number = pos.getY() + this.getNetVelocity(i);
+      cur.setPos(new Point(pos.getX(), displaceY));
+      this.time = seconds;
+    }
+  }
+  public getTime(): number {
+    return this.time;
+  }
+  public getObjNetForceY(index: number): number {
+    const obj: Object = this.objs[index];
+    const oForce: number = obj.getCurForceY();
+    const gForce: number = obj.getMass() * this.gAccel;
+    const aForce: number = this.airResB ? -this.airResB * obj.getVeloY() : 0;
+    return oForce + gForce + aForce;
+  }
+  public getObjNetAccelY(index: number): number {
+    const obj: Object = this.objs[index];
+    const nForce: number = this.getObjNetForceY(index);
+    const accelY: number = nForce / obj.getMass();
+    return accelY;
+  }
+  // this wont work because it taking the net force at this time and mutiplying with all time
+  // return (nForce * this.time) / obj.getMass();
+  public getObjNetVelY(index: number, time: number, prevTime: number, prevAccel: number): number {
+    // take the time inc * ( ( accel of now + accel of next inc )  / 2)
+    this.objs[index].setTime(time);
+    const cur: number = ( time - prevTime ) * ((this.getObjNetAccelY(index) + prevAccel) / 2);
+    return cur;
+  }
+  public getNetVelocity(index: number): number {
+    return this.velocities[index];
+  }
+  public getNetAcceleration(index: number): number {
+    return this.accelerations[index];
   }
 }
 
-export interface IStars {
-  image: HTMLImageElement,
-  positions: Point[];
-}
 
-export class Stars implements IStars {
-  image: HTMLImageElement;
-  positions: Point[]
-  constructor(image: HTMLImageElement, positions: Point[]) {
-    this.image = image;
-    this.positions = positions;
+export class Stars {
+  private ready: boolean;
+  private image: HTMLImageElement;
+  private positions: Point[]
+  constructor() {
+    this.ready = false;
+    this.positions = [];
+    this.image = new Image(10, 10);
+    this.image.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
+    this.image.addEventListener('load' , () => this.ready = true);
   }
   public arrange(width: number, height: number): void {
     for(let i = 0 ; i < width; i++) {
@@ -71,62 +170,92 @@ export class Stars implements IStars {
       }
     }
   }
+  public getPositions(): Point[] {
+    return this.positions;
+  }
+  public getImage(): HTMLImageElement {
+    return this.image;
+  }
 }
 
 export class Simulation {
   private earth: Planet;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private objs: Object[];
   private stars: Stars;
   constructor(objs: Object[]) {
-    this.earth = new Planet(-9.8);
-    this.objs = objs;
-    for(let i = 0 ; i < this.objs.length; i++) {
-      const cur: Object = this.objs[i];
-      cur.setYGravityForce(this.earth.getObjGravForce(cur.getMass()));
-    }
+    this.earth = new Planet(objs);
+    this.earth.setGAccel(-9.8);
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
     const w: number = this.canvas.clientWidth;
     const h: number = this.canvas.clientHeight;
     this.canvas.width = w;
     this.canvas.height = h;
     this.ctx = this.canvas.getContext('2d');
-    this.stars.image = new Image(10, 10);
-    this.stars.image.src = "https://clipart.info/images/ccovers/1531014986Gold-Star-Transparent-PNG-Clip-Art.png";
-    this.stars.positions = [];
+    this.stars = new Stars();
     this.stars.arrange(this.canvas.width, this.canvas.height);
   }
   public init() {
     this.drawStars();
+    this.drawPosition();
     this.drawLandscape();
-    this.drawPosition(0);
+    this.drawToggle(false, false);
   }
   private clearCanvas(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
   private drawStars(): void {
-    for(let i = 0; i < this.stars.positions.length; i++) {
-      const cur: Point = this.stars.positions[i];
-      this.ctx.drawImage(this.stars.image, cur.getX(), cur.getY(), 10, 10);
+    const positions: Point[] = this.stars.getPositions();
+    for(let i = 0; i < positions.length; i++) {
+      const cur: Point = positions[i];
+      this.ctx.drawImage(this.stars.getImage(), cur.getX(), cur.getY(), 10, 10);
     }
   }
   private drawPosition(): void {
     const startPosX = (this.canvas.width / 10) * 4.5;
     const startPosY = (this.canvas.height / 10) * 7;
-    for(let i = 0 ; i < this.objs.length; i++) {
-      const cur: Object = this.objs[i];
-      const yPos: Point = cur.getPos();
-      this.ctx.drawImage(cur.getSprite(), startPosX, startPosY, cur.getSprite().width, cur.getSprite().height);
+    for(let i = 0 ; i < this.earth.getObjs().length; i++) {
+      const cur: Object = this.earth.getObjs()[i];
+      const position: Point = cur.getPos();
+      this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY()), cur.getSprite().width, cur.getSprite().height);
+      if(cur instanceof Rocket) {
+        const parachute: HTMLImageElement = cur.getParachute();
+        if(cur.hasParachute())
+          this.ctx.drawImage(parachute, startPosX - 5, startPosY - (position.getY()) - 30, parachute.width, parachute.height);
+      }
     }
   }
   private drawLandscape() {
+    const startPosX = (this.canvas.width / 10) * 4.5;
+    const startPosY = (this.canvas.height / 10) * 7;
     this.ctx.fillStyle = "green";
     this.ctx.fillRect(0, startPosY + 18, this.canvas.width, this.canvas.height);
   }
-  setRocketValues(yA: number, yB: number, mass: number) {
-    this.rocket.setValues(yA, yB, mass);
-    this.fGravity = this.aGravity * this.rocket.getMass();
+  private drawCalc(obj: number) {
+    const textPlacementX: number = (this.canvas.width / 30);
+    const textPlacementY: number = (this.canvas.height / 10);
+    this.ctx.font = '20px Arial';
+    this.ctx.fillStyle = "white";
+    this.ctx.fillText("Time[s]", textPlacementX, textPlacementY + 0);
+    this.ctx.fillText(this.earth.getTime().toFixed(4) + " s", textPlacementX, textPlacementY + 30);
+    this.ctx.fillText("Position[Y]", textPlacementX, textPlacementY + 60);
+    this.ctx.fillText(this.earth.getObjs()[0].getPos().getY() + " (m)", textPlacementX, textPlacementY + 90);
+    this.ctx.fillText("Velocity[Y]", textPlacementX, textPlacementY + 120);
+    this.ctx.fillText(this.earth.getNetVelocity(obj) + "(m/s)", textPlacementX, textPlacementY + 150);
+    this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
+    this.ctx.fillText(this.earth.getNetAcceleration(obj) + "(m/s^2)", textPlacementX, textPlacementY + 210);
+  }
+  public drawToggle(sAirRes: boolean, sParchute: boolean) {
+    this.clearCanvas();
+    this.drawStars();
+    this.drawPosition();
+    this.drawLandscape();
+    const textPlacementX: number = (this.canvas.width / 30) * 24;
+    const textPlacementY: number = (this.canvas.height / 10);
+    this.ctx.font = '20px Arial';
+    this.ctx.fillStyle = "white";
+    this.ctx.fillText(sAirRes ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
+    this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX + 38, textPlacementY + 30);
   }
   public start() {
     const startPosX = (this.canvas.width / 10) * 4.4;
@@ -135,6 +264,7 @@ export class Simulation {
       this.clearCanvas();
       this.drawStars();
       this.drawPosition();
+      this.drawLandscape();
       this.ctx.fillStyle = "white";
       this.ctx.font = 'bold 60pt Arial';
     }
@@ -159,57 +289,28 @@ export class Simulation {
   private draw(): void {
     const inc: number = 0.1;
     let seconds: number = 0.0;
-    let passInit: boolean = false;
     const interval = setInterval(() => {
-      console.log(this.getYDisplacement(seconds));
-      if(this.getYDisplacement(seconds) < 0) {
-        console.log("Clear interval");
-        clearInterval(interval);
-      }
+      //if(this.getYDisplacement(seconds) < 0) {
+      //  console.log("Clear interval");
+      //  clearInterval(interval);
+      //}
       seconds += inc;
       this.clearCanvas();
       this.drawStars();
-      this.drawObjs(seconds);
-      this.redrawCalc(this.objs[0], seconds);
-      this.getYDisplacement(seconds, true);
+      this.drawPosition();
+      this.drawLandscape();
+      this.drawCalc(0);
+      if(isNaN(this.earth.getObjs()[0].getPos().getY())) {
+        alert("Simulation is unable to process unreal number! Please change the value of A and B.");
+        clearInterval(interval);
+      }
+      if(this.earth.getObjs()[0].getPos().getY() < 0) {
+        alert("Simulation is complete the rocket is back on the surface. If your rocket didn't move there isn't enough force to propel it up.");
+        clearInterval(interval);
+      }
+      this.earth.setTime(seconds);
     }, inc);
     return;
-  }
-  redrawCalc(obj: Object, time: number) {
-    const textPlacementX: number = (this.canvas.width / 30);
-    const textPlacementY: number = (this.canvas.height / 10);
-    this.ctx.font = '20px Arial';
-    this.ctx.fillStyle = "white";
-    this.ctx.fillText("Time[s]", textPlacementX, textPlacementY + 0);
-    this.ctx.fillText(time.toFixed(4) + " s", textPlacementX, textPlacementY + 30);
-    this.ctx.fillText("Position[Y]", textPlacementX, textPlacementY + 60);
-    this.ctx.fillText(this.getYDisplacement(time) + "(m)", textPlacementX, textPlacementY + 90);
-    this.ctx.fillText("Velocity[Y]", textPlacementX, textPlacementY + 120);
-    this.ctx.fillText(this.getYVel(time) + "(m/s)", textPlacementX, textPlacementY + 150);
-    this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
-    this.ctx.fillText(this.getYAccel(time) + "(m/s^2)", textPlacementX, textPlacementY + 210);
-  }
-  redraw(time: number) {
-    const yVel = this.getYVel(time);
-    this.rocket.setPos(new Point(this.rocket.getPos().getX(), this.rocket.getPos().getY() + yVel));
-  }
-  private getYDisplacement(time: number, autoinc?: boolean): number {
-    const yDisplacement = this.rocket.getPos().getY() + this.getYVel(time);
-    if(autoinc)
-      this.rocket.setPos(new Point(this.rocket.getPos().getX(), yDisplacement));
-    return yDisplacement;
-  }
-  private getYVel(time: number): number {
-    const rForceY = this.rocket.getCurForceY(time);
-    const tForceY = rForceY + this.fGravity;
-    const yVel = (tForceY * time) / this.rocket.getMass();
-    return yVel;
-  }
-  private getYAccel(time: number): number {
-    const rForceY = this.rocket.getCurForceY(time);
-    const tForceY = rForceY + this.fGravity;
-    const yAccel = tForceY / this.rocket.getMass();
-    return yAccel;
   }
 }
 
