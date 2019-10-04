@@ -11,13 +11,14 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-import { Chart } from "chart.js";
+import * as Chart from "chart.js";
 var Graph = /** @class */ (function () {
     function Graph(simulation) {
         this.simulation = simulation;
         this.positionsY = [];
         this.velocitiesY = [];
         this.accelereationY = [];
+        this.time = [];
     }
     Graph.prototype.init = function () {
         this.canvas = document.getElementById('graphCanvas');
@@ -26,6 +27,7 @@ var Graph = /** @class */ (function () {
         var h = this.canvas.clientHeight;
         this.canvas.width = w;
         this.canvas.height = h;
+        this.drawPosition();
     };
     Graph.prototype.change = function (mode) {
         if (mode === "position")
@@ -39,34 +41,45 @@ var Graph = /** @class */ (function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     };
     Graph.prototype.setCalc = function () {
+        var _this = this;
         var earth = this.simulation.getEarth();
-        var go;
+        var go = true;
         var inc = 0.1;
         var total = 0;
-        while (go) {
+        var interval = setInterval(function () {
+            var displacement = earth.getObjs()[0].getPos().getY();
+            if (displacement < 0) {
+                clearInterval(interval);
+                var pos_toggle = document.getElementById('position_toggle');
+                var vel_toggle = document.getElementById('velocity_toggle');
+                var accel_toggle = document.getElementById('acceleration_toggle');
+                pos_toggle.disabled = false;
+                vel_toggle.disabled = false;
+                accel_toggle.disabled = false;
+                return;
+            }
+            _this.positionsY.push(displacement);
+            _this.velocitiesY.push(earth.getNetVelocity(0));
+            _this.accelereationY.push(earth.getNetAcceleration(0));
+            _this.time.push(total);
+            _this.drawPosition();
             earth.setTime(total + inc);
-            this.positionsY.push(earth.getNetDistance(0));
-            this.velocitiesY.push(earth.getNetVelocity(0));
-            this.accelereationY.push(earth.getNetAcceleration(0));
             total += inc;
-        }
+        }, 0.00000001);
     };
     Graph.prototype.drawPosition = function () {
-        this.clearCanvas();
         var pos = new Position(this.ctx);
-        pos.setData(this.positionsY);
+        pos.setData(this.positionsY, this.time, "Position");
         pos.draw();
     };
     Graph.prototype.drawVelocity = function () {
-        this.clearCanvas();
         var vel = new Velocity(this.ctx);
-        vel.setData(this.velocitiesY);
+        vel.setData(this.velocitiesY, this.time, "Velocity");
         vel.draw();
     };
     Graph.prototype.drawAcceleration = function () {
-        this.clearCanvas();
         var accel = new Acceleration(this.ctx);
-        accel.setData(this.accelereationY);
+        accel.setData(this.accelereationY, this.time, "Acceleration");
         accel.draw();
     };
     return Graph;
@@ -78,12 +91,15 @@ var Config = /** @class */ (function () {
             type: "line"
         };
     }
-    Config.prototype.setData = function (points) {
-        this.config.data.datasets[0].data = points;
-        this.config.data.datasets[0].label = "Time(s)";
+    Config.prototype.setData = function (points, times, name) {
+        this.config.data.labels = times.map(function (cur) { return cur.toString(); });
+        this.config.data.datasets.push({
+            data: points,
+            label: name,
+        });
     };
     Config.prototype.draw = function () {
-        this.chart.render();
+        this.chart.update({ duration: 5, lazy: false, easing: 'easeInElastic' });
     };
     return Config;
 }());
@@ -94,7 +110,7 @@ var Position = /** @class */ (function (_super) {
         _this.chart = new Chart(ctx, _this.config);
         _this.chart.options.title = {
             display: true,
-            text: "Postion[Y] vs Time Graph"
+            text: "Postion[Y] vs Time[S] Graph"
         };
         return _this;
     }
@@ -107,7 +123,7 @@ var Velocity = /** @class */ (function (_super) {
         _this.chart = new Chart(ctx, _this.config);
         _this.chart.options.title = {
             display: true,
-            text: "Velocity[Y] vs Time Graph"
+            text: "Velocity[Y] vs Time[S] Graph"
         };
         return _this;
     }
@@ -120,7 +136,7 @@ var Acceleration = /** @class */ (function (_super) {
         _this.chart = new Chart(ctx, _this.config);
         _this.chart.options.title = {
             display: true,
-            text: "Acceleration[Y] vs Time Graph"
+            text: "Acceleration[Y] vs Time[S] Graph"
         };
         return _this;
     }

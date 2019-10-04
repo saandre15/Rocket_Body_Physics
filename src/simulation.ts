@@ -53,6 +53,8 @@ export class Rocket extends Object {
     this.parachuteMode = false;
   }
   public getCurForceY(): number {
+    if(!this.yA || !this.yB || !this.mass)
+      alert("Please set the A, B, and Mass.");
     const force: number = Math.sqrt(this.yA - (this.yB * this.time));
     if(isNaN(force))
       return 0;
@@ -150,13 +152,16 @@ export class Planet {
   public getNetAcceleration(index: number): number {
     return this.accelerations[index];
   }
+  public getNetDistance(index: number): number {
+    return this.getObjs()[index].getPos().getY();
+  }
 }
 
 
 export class Stars {
   private ready: boolean;
   private image: HTMLImageElement;
-  private positions: Point[]
+  private positions: Point[];
   constructor() {
     this.ready = false;
     this.positions = [];
@@ -199,6 +204,9 @@ export class Simulation {
     this.stars = new Stars();
     this.stars.arrange(this.canvas.width, this.canvas.height);
   }
+  public getEarth(): Planet {
+    return this.earth;
+  }
   public resetCanvas() : void {
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
     const w: number = this.canvas.clientWidth;
@@ -206,12 +214,6 @@ export class Simulation {
     this.canvas.width = w;
     this.canvas.height = h;
     this.ctx = this.canvas.getContext('2d');
-  }
-  public init() {
-    this.drawStars();
-    this.drawPosition();
-    this.drawLandscape();
-    this.drawToggle(false, false);
   }
   private clearCanvas(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -248,6 +250,7 @@ export class Simulation {
     const textPlacementX: number = (this.canvas.width / 30);
     const textPlacementY: number = (this.canvas.height / 10);
     this.ctx.font = '20px Arial';
+    this.ctx.textAlign = 'left';
     this.ctx.fillStyle = "white";
     this.ctx.fillText("Time[s]", textPlacementX, textPlacementY + 0);
     this.ctx.fillText(this.earth.getTime().toFixed(4) + " s", textPlacementX, textPlacementY + 30);
@@ -263,41 +266,13 @@ export class Simulation {
     this.drawStars();
     this.drawPosition();
     this.drawLandscape();
-    const textPlacementX: number = (this.canvas.width / 30) * 24;
+    const textPlacementX: number = (this.canvas.width / 30) * 29;
     const textPlacementY: number = (this.canvas.height / 10);
     this.ctx.font = '20px Arial';
     this.ctx.fillStyle = "white";
+    this.ctx.textAlign = 'right';
     this.ctx.fillText(sAirRes ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
-    this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX + 38, textPlacementY + 30);
-  }
-  public start() {
-    const startPosX = (this.canvas.width / 10) * 4.4;
-    const startPosY = (this.canvas.height / 10) * 3;
-    const redraw = () => {
-      this.clearCanvas();
-      this.drawStars();
-      this.drawPosition();
-      this.drawLandscape();
-      this.ctx.fillStyle = "white";
-      this.ctx.font = 'bold 60pt Arial';
-    }
-    setTimeout(() => {
-      redraw();
-      this.ctx.fillText("3", startPosX, startPosY);
-    }, 1000);
-    setTimeout(() => {
-      redraw();
-      this.ctx.fillText("2", startPosX, startPosY);
-    }, 2000);
-    setTimeout(() => {
-      redraw();
-      this.ctx.fillText("1", startPosX, startPosY);
-    }, 3000);
-    setTimeout(() => {
-      redraw();
-      this.ctx.fillText("START", startPosX - 100, startPosY);
-      setTimeout(() => {redraw();  this.draw()}, 1000);
-    }, 4000);
+    this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
   }
   private draw(): void {
     const inc: number = 0.1;
@@ -329,6 +304,42 @@ export class Simulation {
       this.earth.setTime(seconds);
     }, inc);
     return;
+  }
+  public init() {
+    this.drawStars();
+    this.drawPosition();
+    this.drawLandscape();
+    this.drawToggle(false, false);
+  }
+  public start() {
+    const startPosX = (this.canvas.width / 10) * 4.6;
+    const startPosY = (this.canvas.height / 10) * 3;
+    const redraw = () => {
+      this.clearCanvas();
+      this.drawStars();
+      this.drawPosition();
+      this.drawLandscape();
+      this.ctx.fillStyle = "white";
+      this.ctx.font = 'bold 60pt Arial';
+      this.ctx.textAlign = 'center';
+    }
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("3", startPosX, startPosY);
+    }, 1000);
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("2", startPosX, startPosY);
+    }, 2000);
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("1", startPosX, startPosY);
+    }, 3000);
+    setTimeout(() => {
+      redraw();
+      this.ctx.fillText("START", startPosX, startPosY);
+      setTimeout(() => {redraw();  this.draw()}, 1000);
+    }, 4000);
   }
 }
 

@@ -60,6 +60,8 @@ var Rocket = /** @class */ (function (_super) {
         return _this;
     }
     Rocket.prototype.getCurForceY = function () {
+        if (!this.yA || !this.yB || !this.mass)
+            alert("Please set the A, B, and Mass.");
         var force = Math.sqrt(this.yA - (this.yB * this.time));
         if (isNaN(force))
             return 0;
@@ -152,6 +154,9 @@ var Planet = /** @class */ (function () {
     Planet.prototype.getNetAcceleration = function (index) {
         return this.accelerations[index];
     };
+    Planet.prototype.getNetDistance = function (index) {
+        return this.getObjs()[index].getPos().getY();
+    };
     return Planet;
 }());
 export { Planet };
@@ -196,6 +201,9 @@ var Simulation = /** @class */ (function () {
         this.stars = new Stars();
         this.stars.arrange(this.canvas.width, this.canvas.height);
     }
+    Simulation.prototype.getEarth = function () {
+        return this.earth;
+    };
     Simulation.prototype.resetCanvas = function () {
         this.canvas = document.getElementById('simulation');
         var w = this.canvas.clientWidth;
@@ -203,12 +211,6 @@ var Simulation = /** @class */ (function () {
         this.canvas.width = w;
         this.canvas.height = h;
         this.ctx = this.canvas.getContext('2d');
-    };
-    Simulation.prototype.init = function () {
-        this.drawStars();
-        this.drawPosition();
-        this.drawLandscape();
-        this.drawToggle(false, false);
     };
     Simulation.prototype.clearCanvas = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -245,6 +247,7 @@ var Simulation = /** @class */ (function () {
         var textPlacementX = (this.canvas.width / 30);
         var textPlacementY = (this.canvas.height / 10);
         this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'left';
         this.ctx.fillStyle = "white";
         this.ctx.fillText("Time[s]", textPlacementX, textPlacementY + 0);
         this.ctx.fillText(this.earth.getTime().toFixed(4) + " s", textPlacementX, textPlacementY + 30);
@@ -260,42 +263,13 @@ var Simulation = /** @class */ (function () {
         this.drawStars();
         this.drawPosition();
         this.drawLandscape();
-        var textPlacementX = (this.canvas.width / 30) * 24;
+        var textPlacementX = (this.canvas.width / 30) * 29;
         var textPlacementY = (this.canvas.height / 10);
         this.ctx.font = '20px Arial';
         this.ctx.fillStyle = "white";
+        this.ctx.textAlign = 'right';
         this.ctx.fillText(sAirRes ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
-        this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX + 38, textPlacementY + 30);
-    };
-    Simulation.prototype.start = function () {
-        var _this = this;
-        var startPosX = (this.canvas.width / 10) * 4.4;
-        var startPosY = (this.canvas.height / 10) * 3;
-        var redraw = function () {
-            _this.clearCanvas();
-            _this.drawStars();
-            _this.drawPosition();
-            _this.drawLandscape();
-            _this.ctx.fillStyle = "white";
-            _this.ctx.font = 'bold 60pt Arial';
-        };
-        setTimeout(function () {
-            redraw();
-            _this.ctx.fillText("3", startPosX, startPosY);
-        }, 1000);
-        setTimeout(function () {
-            redraw();
-            _this.ctx.fillText("2", startPosX, startPosY);
-        }, 2000);
-        setTimeout(function () {
-            redraw();
-            _this.ctx.fillText("1", startPosX, startPosY);
-        }, 3000);
-        setTimeout(function () {
-            redraw();
-            _this.ctx.fillText("START", startPosX - 100, startPosY);
-            setTimeout(function () { redraw(); _this.draw(); }, 1000);
-        }, 4000);
+        this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
     };
     Simulation.prototype.draw = function () {
         var _this = this;
@@ -328,6 +302,43 @@ var Simulation = /** @class */ (function () {
             _this.earth.setTime(seconds);
         }, inc);
         return;
+    };
+    Simulation.prototype.init = function () {
+        this.drawStars();
+        this.drawPosition();
+        this.drawLandscape();
+        this.drawToggle(false, false);
+    };
+    Simulation.prototype.start = function () {
+        var _this = this;
+        var startPosX = (this.canvas.width / 10) * 4.6;
+        var startPosY = (this.canvas.height / 10) * 3;
+        var redraw = function () {
+            _this.clearCanvas();
+            _this.drawStars();
+            _this.drawPosition();
+            _this.drawLandscape();
+            _this.ctx.fillStyle = "white";
+            _this.ctx.font = 'bold 60pt Arial';
+            _this.ctx.textAlign = 'center';
+        };
+        setTimeout(function () {
+            redraw();
+            _this.ctx.fillText("3", startPosX, startPosY);
+        }, 1000);
+        setTimeout(function () {
+            redraw();
+            _this.ctx.fillText("2", startPosX, startPosY);
+        }, 2000);
+        setTimeout(function () {
+            redraw();
+            _this.ctx.fillText("1", startPosX, startPosY);
+        }, 3000);
+        setTimeout(function () {
+            redraw();
+            _this.ctx.fillText("START", startPosX, startPosY);
+            setTimeout(function () { redraw(); _this.draw(); }, 1000);
+        }, 4000);
     };
     return Simulation;
 }());

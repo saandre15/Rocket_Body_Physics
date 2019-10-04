@@ -1,4 +1,5 @@
 import {  Simulation, Rocket } from "./simulation";
+import { Graph } from "./charts";
 
 const start: HTMLButtonElement = document.getElementById('start') as HTMLButtonElement;
 const restart: HTMLButtonElement = document.getElementById('restart') as HTMLButtonElement;
@@ -18,10 +19,10 @@ const state = {
 
 const rocket = new Rocket(0, 0);
 const simulation = new Simulation([rocket]);
-simulation.init();
+const graph = new Graph(simulation);
 
 window.addEventListener('load', (e: Event) => {
-
+  simulation.init();
 })
 
 start.addEventListener('click', (e: MouseEvent) => {
@@ -29,15 +30,13 @@ start.addEventListener('click', (e: MouseEvent) => {
   AirResToggle.disabled = true;
   ParchuteToggle.disabled = true;
   start.disabled = true;
-  const nMass: number = Number(mass.value);
-  const nA: number = Number(A.value);
-  let nB: number = Number(B.value);
-  if(!nMass || !nA || !nB) {
-    alert("Please make sure there is a valid number inputed into the mass, A, and B.");
-    return;
+  setRocketValues();
+  if(document.getElementById('graphCanvas')) {
+    graph.init();
+    graph.setCalc();
   }
-  rocket.setValues(nA, nB, nMass);
-  simulation.start();
+  else if(document.getElementById('simulation'))
+    simulation.start();
 });
 
 restart.addEventListener('click', (e: MouseEvent) => {
@@ -55,9 +54,7 @@ ParchuteToggle.addEventListener('click', (e: MouseEvent) => {
 });
 
 SimulationToggle.addEventListener('click', (e: MouseEvent) => {
-  // Render Simulation
   if(document.getElementById('simulation') ) {
-    console.log(document.getElementById('simulation'));
     return;
   }
   else {
@@ -69,6 +66,7 @@ SimulationToggle.addEventListener('click', (e: MouseEvent) => {
     sim.className = 'w-100';
     sim.style.backgroundColor = 'black';
     parent.appendChild(sim);
+    document.getElementById('graph_toggle_buttons').remove();
     simulation.resetCanvas();
     simulation.init();
   }
@@ -76,25 +74,42 @@ SimulationToggle.addEventListener('click', (e: MouseEvent) => {
 
 GraphToggle.addEventListener('click', (e: MouseEvent) => {
   if(document.getElementById('graph')) {
-    console.log(document.getElementById('graph'));
     return;
   }
   else {
-    const child: Node = document.getElementById('simulation');
-    let parent: Node = child.parentNode;
-    parent.removeChild(child);
-    const graph: HTMLCanvasElement = document.createElement('canvas');
-    graph.id = 'graph';
-    graph.className = 'w-100';
-    graph.style.backgroundColor = 'blue';
-    parent.appendChild(graph);
-    const parentEl: HTMLElement = graph.parentElement;
-    const buttons: string = `<div class="btn-group mb-3" id="graph_toggle_buttons">
-      <button class="btn btn-primary active" id="position_toggle">Position Mode</button>
+    const child: ChildNode = document.getElementById('simulation');
+    let parent: HTMLElement = child.parentElement;
+    child.remove();
+    const graphCanvas: HTMLCanvasElement = document.createElement('canvas');
+    graphCanvas.id = 'graphCanvas';
+    graphCanvas.className = 'w-100';
+    parent.appendChild(graphCanvas);
+    const buttons: string = `<div class="btn-group mt-4" id="graph_toggle_buttons">
+      <button class="btn btn-primary" id="position_toggle">Position Mode</button>
       <button class="btn btn-primary" id="velocity_toggle">Velocity Mode</button>
       <button class="btn btn-primary" id="acceleration_toggle">Acceleration Mode</button>
       </div>`;
-    parentEl.insertAdjacentHTML('beforeend', buttons);
-
+    parent.insertAdjacentHTML('beforeend', buttons);
+    graph.init();
+    const pos_toggle = document.getElementById('position_toggle') as HTMLButtonElement;
+    const vel_toggle = document.getElementById('velocity_toggle') as HTMLButtonElement;
+    const accel_toggle = document.getElementById('acceleration_toggle') as HTMLButtonElement;
+    pos_toggle.addEventListener('click', (e: MouseEvent) => graph.drawPosition());
+    vel_toggle.addEventListener('click', (e: MouseEvent) => graph.drawVelocity());
+    accel_toggle.addEventListener('click', (e: MouseEvent) => graph.drawAcceleration());
+    pos_toggle.disabled = true;
+    vel_toggle.disabled = true;
+    accel_toggle.disabled = true;
   }
 });
+
+function setRocketValues(): void {
+  const nMass: number = Number(mass.value);
+  const nA: number = Number(A.value);
+  let nB: number = Number(B.value);
+  if(!nMass || !nA || !nB) {
+    alert("Please make sure there is a valid number inputed into the mass, A, and B.");
+    return;
+  }
+  rocket.setValues(nA, nB, nMass);
+}
