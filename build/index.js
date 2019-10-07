@@ -38,18 +38,18 @@ restart.addEventListener('click', function (e) {
 });
 AirResToggle.addEventListener('click', function (e) {
     state.air_resistance = !state.air_resistance;
-    simulation.drawToggle(state.air_resistance, state.parachute);
+    simulation.drawToggle();
 });
 ParchuteToggle.addEventListener('click', function (e) {
     state.parachute = !state.parachute;
-    simulation.drawToggle(state.air_resistance, state.parachute);
+    simulation.drawToggle();
 });
 SimulationToggle.addEventListener('click', function (e) {
     if (document.getElementById('simulation')) {
         return;
     }
     else {
-        var child = document.getElementById('graph');
+        var child = document.getElementById('graphCanvas');
         var parent_1 = child.parentNode;
         parent_1.removeChild(child);
         var sim = document.createElement('canvas');

@@ -43,6 +43,7 @@ export class Rocket extends Object {
   protected yB: number;
   private parachute: HTMLImageElement;
   private parachuteMode: boolean;
+  private parchuteB: number;
   constructor(x: number, y:number) {
     const sprite = new Image(30, 30);
     sprite.src = "https://drive.google.com/uc?export=view&id=1p5huN9IbFfPHRtKVC6E_Q4cgJN336ADt";
@@ -65,6 +66,12 @@ export class Rocket extends Object {
     this.yA = yA;
     this.yB = yB;
     this.mass = mass;
+  }
+  public setParachuteDragForce(b: number): void {
+    this.parchuteB = b;
+  }
+  public getParachuteB(): number {
+    return this.parchuteB;
   }
   public activateParachute() {
     this.parachuteMode = true;
@@ -130,7 +137,13 @@ export class Planet {
     const oForce: number = obj.getCurForceY();
     const gForce: number = obj.getMass() * this.gAccel;
     const aForce: number = this.airResB ? -this.airResB * obj.getVeloY() : 0;
-    return oForce + gForce + aForce;
+    let dForce: number = 0;
+    if(this.getObjs()[index] instanceof Rocket) {
+      const rocket: Rocket = this.getObjs()[index] as Rocket;
+      if(rocket.hasParachute())
+        dForce = -1 * rocket.getParachuteB() * this.getNetVelocity(index);
+    }
+    return oForce + gForce + aForce + dForce;
   }
   public getObjNetAccelY(index: number): number {
     const obj: Object = this.objs[index];
@@ -192,7 +205,11 @@ export class Simulation {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private stars: Stars;
+  private enableParachute: boolean;
+  private enableAirResistance: boolean;
   constructor(objs: Object[]) {
+    this.enableAirResistance = false;
+    this.enableParachute = false;
     this.earth = new Planet(objs);
     this.earth.setGAccel(-9.8);
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
@@ -261,7 +278,7 @@ export class Simulation {
     this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
     this.ctx.fillText(this.earth.getNetAcceleration(obj) + "(m/s^2)", textPlacementX, textPlacementY + 210);
   }
-  public drawToggle(sAirRes: boolean, sParchute: boolean) {
+  public drawToggle() {
     this.clearCanvas();
     this.drawStars();
     this.drawPosition();
@@ -271,8 +288,8 @@ export class Simulation {
     this.ctx.font = '20px Arial';
     this.ctx.fillStyle = "white";
     this.ctx.textAlign = 'right';
-    this.ctx.fillText(sAirRes ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
-    this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
+    this.ctx.fillText(this.enableAirResistance ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
+    this.ctx.fillText(this.enableParachute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
   }
   private draw(): void {
     const inc: number = 0.1;
@@ -309,7 +326,7 @@ export class Simulation {
     this.drawStars();
     this.drawPosition();
     this.drawLandscape();
-    this.drawToggle(false, false);
+    this.drawToggle();
   }
   public start() {
     const startPosX = (this.canvas.width / 10) * 4.6;

@@ -45,12 +45,14 @@ restart.addEventListener('click', (e: MouseEvent) => {
 
 AirResToggle.addEventListener('click', (e: MouseEvent) => {
   state.air_resistance = !state.air_resistance;
-  simulation.drawToggle(state.air_resistance, state.parachute);
+  // Fix Simulation air resistance
+  simulation.drawToggle();
 });
 
 ParchuteToggle.addEventListener('click', (e: MouseEvent) => {
   state.parachute = !state.parachute;
-  simulation.drawToggle(state.air_resistance, state.parachute);
+  // Fix simulation parachute toggle
+  simulation.drawToggle();
 });
 
 SimulationToggle.addEventListener('click', (e: MouseEvent) => {
@@ -58,7 +60,7 @@ SimulationToggle.addEventListener('click', (e: MouseEvent) => {
     return;
   }
   else {
-    const child: Node = document.getElementById('graph');
+    const child: Node = document.getElementById('graphCanvas');
     const parent: Node = child.parentNode;
     parent.removeChild(child);
     const sim: HTMLCanvasElement = document.createElement('canvas');

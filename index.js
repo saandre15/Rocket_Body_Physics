@@ -297,18 +297,18 @@ restart.addEventListener('click', function (e) {
 });
 AirResToggle.addEventListener('click', function (e) {
     state.air_resistance = !state.air_resistance;
-    simulation.drawToggle(state.air_resistance, state.parachute);
+    simulation.drawToggle();
 });
 ParchuteToggle.addEventListener('click', function (e) {
     state.parachute = !state.parachute;
-    simulation.drawToggle(state.air_resistance, state.parachute);
+    simulation.drawToggle();
 });
 SimulationToggle.addEventListener('click', function (e) {
     if (document.getElementById('simulation')) {
         return;
     }
     else {
-        var child = document.getElementById('graph');
+        var child = document.getElementById('graphCanvas');
         var parent_1 = child.parentNode;
         parent_1.removeChild(child);
         var sim = document.createElement('canvas');
@@ -450,6 +450,12 @@ var Rocket = /** @class */ (function (_super) {
         this.yB = yB;
         this.mass = mass;
     };
+    Rocket.prototype.setParachuteDragForce = function (b) {
+        this.parchuteB = b;
+    };
+    Rocket.prototype.getParachuteB = function () {
+        return this.parchuteB;
+    };
     Rocket.prototype.activateParachute = function () {
         this.parachuteMode = true;
     };
@@ -509,7 +515,13 @@ var Planet = /** @class */ (function () {
         var oForce = obj.getCurForceY();
         var gForce = obj.getMass() * this.gAccel;
         var aForce = this.airResB ? -this.airResB * obj.getVeloY() : 0;
-        return oForce + gForce + aForce;
+        var dForce = 0;
+        if (this.getObjs()[index] instanceof Rocket) {
+            var rocket = this.getObjs()[index];
+            if (rocket.hasParachute())
+                dForce = -1 * rocket.getParachuteB() * this.getNetVelocity(index);
+        }
+        return oForce + gForce + aForce + dForce;
     };
     Planet.prototype.getObjNetAccelY = function (index) {
         var obj = this.objs[index];
@@ -567,6 +579,8 @@ var Stars = /** @class */ (function () {
 
 var Simulation = /** @class */ (function () {
     function Simulation(objs) {
+        this.enableAirResistance = false;
+        this.enableParachute = false;
         this.earth = new Planet(objs);
         this.earth.setGAccel(-9.8);
         this.canvas = document.getElementById('simulation');
@@ -635,7 +649,7 @@ var Simulation = /** @class */ (function () {
         this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
         this.ctx.fillText(this.earth.getNetAcceleration(obj) + "(m/s^2)", textPlacementX, textPlacementY + 210);
     };
-    Simulation.prototype.drawToggle = function (sAirRes, sParchute) {
+    Simulation.prototype.drawToggle = function () {
         this.clearCanvas();
         this.drawStars();
         this.drawPosition();
@@ -645,8 +659,8 @@ var Simulation = /** @class */ (function () {
         this.ctx.font = '20px Arial';
         this.ctx.fillStyle = "white";
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(sAirRes ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
-        this.ctx.fillText(sParchute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
+        this.ctx.fillText(this.enableAirResistance ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
+        this.ctx.fillText(this.enableParachute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
     };
     Simulation.prototype.draw = function () {
         var _this = this;
@@ -684,7 +698,7 @@ var Simulation = /** @class */ (function () {
         this.drawStars();
         this.drawPosition();
         this.drawLandscape();
-        this.drawToggle(false, false);
+        this.drawToggle();
     };
     Simulation.prototype.start = function () {
         var _this = this;
