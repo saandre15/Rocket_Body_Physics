@@ -42,7 +42,7 @@ export class Graph {
     let go: boolean = true;
     let inc: number = 0.1;
     let total: number = 0;
-    const interval: number = setInterval(() => {
+    const interval = setInterval(() => {
       const displacement: number = earth.getObjs()[0].getPos().getY();
       if(displacement < 0) {
         clearInterval(interval);

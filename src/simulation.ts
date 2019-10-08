@@ -319,10 +319,6 @@ export class Simulation {
     let seconds: number = 0.0;
     let prevDist: number = 0;
     const interval = setInterval(() => {
-      //if(this.getYDisplacement(seconds) < 0) {
-      //  console.log("Clear interval");
-      //  clearInterval(interval);
-      //}
       seconds += inc;
       this.clearCanvas();
       this.drawStars();

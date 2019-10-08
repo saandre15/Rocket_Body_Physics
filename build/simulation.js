@@ -314,10 +314,6 @@ var Simulation = /** @class */ (function () {
         var seconds = 0.0;
         var prevDist = 0;
         var interval = setInterval(function () {
-            //if(this.getYDisplacement(seconds) < 0) {
-            //  console.log("Clear interval");
-            //  clearInterval(interval);
-            //}
             seconds += inc;
             _this.clearCanvas();
             _this.drawStars();
