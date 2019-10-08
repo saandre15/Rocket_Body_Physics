@@ -43,7 +43,7 @@ export class Rocket extends Object {
   protected yB: number;
   private parachute: HTMLImageElement;
   private parachuteMode: boolean;
-  private parchuteB: number;
+  private parchuteC: number;
   constructor(x: number, y:number) {
     const sprite = new Image(30, 30);
     sprite.src = "https://drive.google.com/uc?export=view&id=1p5huN9IbFfPHRtKVC6E_Q4cgJN336ADt";
@@ -67,11 +67,11 @@ export class Rocket extends Object {
     this.yB = yB;
     this.mass = mass;
   }
-  public setParachuteDragForce(b: number): void {
-    this.parchuteB = b;
+  public setParachuteDragForce(c: number): void {
+    this.parchuteC = c;
   }
-  public getParachuteB(): number {
-    return this.parchuteB;
+  public getParachuteC(): number {
+    return this.parchuteC;
   }
   public activateParachute() {
     this.parachuteMode = true;
@@ -86,16 +86,20 @@ export class Rocket extends Object {
 
 export class Planet {
   private gAccel: number;
-  private airResB: number;
+  private airResC: number;
+  private enableParachute: boolean;
+  private enableAirResistance: boolean;
   private objs: Object[];
   private time: number;
   private velocities: number[];
   private accelerations: number[];
   constructor(objs: Object[]) {
     this.objs = objs;
+    this.enableAirResistance = false;
+    this.enableParachute = false;
     this.time = 0;
     this.gAccel = 0;
-    this.airResB = 0;
+    this.airResC = 0;
     this.velocities = new Array<number>(this.objs.length);
     this.accelerations = new Array<number>(this.objs.length);
     for(let i = 0 ; i < this.objs.length; i++) {
@@ -103,14 +107,26 @@ export class Planet {
       this.accelerations[i] = 0;
     }
   }
+  public toggleParachute(): void {
+    this.enableParachute = !this.enableParachute;
+  }
+  public toggleAirRes(): void {
+    this.enableAirResistance = !this.enableAirResistance;
+  }
+  public hasAirRes(): boolean {
+    return this.enableAirResistance;
+  }
+  public hasParachute(): boolean {
+    return this.enableParachute;
+  }
   public setGAccel(accel: number): void {
     this.gAccel = accel;
   }
-  public setAirResB(b: number): void {
-    this.airResB = b;
+  public setAirResC(c: number): void {
+    this.airResC = c;
   }
   public getAirRes(time: number): number {
-    return this.airResB;
+    return this.airResC;
   }
   public getObjs(): Object[] {
     return this.objs;
@@ -136,13 +152,15 @@ export class Planet {
     const obj: Object = this.objs[index];
     const oForce: number = obj.getCurForceY();
     const gForce: number = obj.getMass() * this.gAccel;
-    const aForce: number = this.airResB ? -this.airResB * obj.getVeloY() : 0;
     let dForce: number = 0;
+    let aForce: number = 0;
     if(this.getObjs()[index] instanceof Rocket) {
       const rocket: Rocket = this.getObjs()[index] as Rocket;
-      if(rocket.hasParachute())
-        dForce = -1 * rocket.getParachuteB() * this.getNetVelocity(index);
+      if(rocket.hasParachute() && this.enableParachute)
+        dForce = -1 * rocket.getParachuteC() * Math.pow(this.getNetVelocity(index), 2);
     }
+    if(this.enableAirResistance)
+      aForce = this.airResC ? -this.airResC * this.getNetVelocity(index) : 0;
     return oForce + gForce + aForce + dForce;
   }
   public getObjNetAccelY(index: number): number {
@@ -205,11 +223,7 @@ export class Simulation {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private stars: Stars;
-  private enableParachute: boolean;
-  private enableAirResistance: boolean;
   constructor(objs: Object[]) {
-    this.enableAirResistance = false;
-    this.enableParachute = false;
     this.earth = new Planet(objs);
     this.earth.setGAccel(-9.8);
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
@@ -220,6 +234,15 @@ export class Simulation {
     this.ctx = this.canvas.getContext('2d');
     this.stars = new Stars();
     this.stars.arrange(this.canvas.width, this.canvas.height);
+  }
+  public toggleParachute(): void {
+    this.earth.toggleParachute();
+  }
+  public toggleAirResistance(): void {
+    this.earth.toggleAirRes();
+  }
+  public setAirResistance(c: number) {
+    this.earth.setAirResC(c);
   }
   public getEarth(): Planet {
     return this.earth;
@@ -252,7 +275,7 @@ export class Simulation {
       this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY() / scale), cur.getSprite().width, cur.getSprite().height);
       if(cur instanceof Rocket) {
         const parachute: HTMLImageElement = cur.getParachute();
-        if(cur.hasParachute())
+        if(cur.hasParachute() && this.earth.hasParachute())
           this.ctx.drawImage(parachute, startPosX - 5, startPosY - ((position.getY() / scale)) - 30 , parachute.width, parachute.height);
       }
     }
@@ -288,8 +311,8 @@ export class Simulation {
     this.ctx.font = '20px Arial';
     this.ctx.fillStyle = "white";
     this.ctx.textAlign = 'right';
-    this.ctx.fillText(this.enableAirResistance ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
-    this.ctx.fillText(this.enableParachute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
+    this.ctx.fillText(this.earth.hasAirRes() ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
+    this.ctx.fillText(this.earth.hasParachute() ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
   }
   private draw(): void {
     const inc: number = 0.1;

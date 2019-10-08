@@ -4,18 +4,14 @@ import { Graph } from "./charts";
 const start: HTMLButtonElement = document.getElementById('start') as HTMLButtonElement;
 const restart: HTMLButtonElement = document.getElementById('restart') as HTMLButtonElement;
 const mass: HTMLInputElement = document.getElementById('mass') as HTMLInputElement;
-const A: HTMLInputElement = document.getElementById('a') as HTMLInputElement;
-const B: HTMLInputElement = document.getElementById('b') as HTMLInputElement;
+const A: HTMLInputElement = document.getElementById('A') as HTMLInputElement;
+const B: HTMLInputElement = document.getElementById('B') as HTMLInputElement;
 const AirResToggle: HTMLButtonElement = document.getElementById('air_resistance') as HTMLButtonElement;
 const ParchuteToggle: HTMLButtonElement = document.getElementById('parachute') as HTMLButtonElement;
 const SimulationToggle: HTMLButtonElement = document.getElementById('simulation_toggle') as HTMLButtonElement;
 const GraphToggle: HTMLButtonElement = document.getElementById('graph_toggle') as HTMLButtonElement;
-
-const state = {
-  simulation: false,
-  air_resistance: false,
-  parachute: false,
-}
+const parachuteC: HTMLInputElement = document.getElementById('c') as HTMLInputElement;
+const airResistanceB: HTMLInputElement = document.getElementById('b') as HTMLInputElement;
 
 const rocket = new Rocket(0, 0);
 const simulation = new Simulation([rocket]);
@@ -44,14 +40,12 @@ restart.addEventListener('click', (e: MouseEvent) => {
 });
 
 AirResToggle.addEventListener('click', (e: MouseEvent) => {
-  state.air_resistance = !state.air_resistance;
-  // Fix Simulation air resistance
+  simulation.toggleAirResistance();
   simulation.drawToggle();
 });
 
 ParchuteToggle.addEventListener('click', (e: MouseEvent) => {
-  state.parachute = !state.parachute;
-  // Fix simulation parachute toggle
+  simulation.toggleParachute()
   simulation.drawToggle();
 });
 
@@ -105,13 +99,22 @@ GraphToggle.addEventListener('click', (e: MouseEvent) => {
   }
 });
 
-function setRocketValues(): void {
+function setRocketValues(): boolean {
   const nMass: number = Number(mass.value);
   const nA: number = Number(A.value);
-  let nB: number = Number(B.value);
+  const nB: number = Number(B.value);
+  const pC: number = Number(parachuteC.value);
+  const aB: number = Number(airResistanceB.value);
   if(!nMass || !nA || !nB) {
-    alert("Please make sure there is a valid number inputed into the mass, A, and B.");
-    return;
+    alert("Please make sure there is a number inputed into the mass, A, and B.");
+    return false;
+  }
+  if(isNaN(nMass) || isNaN(nA) || isNaN(nB) || isNaN(pC) || isNaN(aB)) {
+    alert("The inputs only allow numbers.");
+    return false;
   }
   rocket.setValues(nA, nB, nMass);
+  rocket.setParachuteDragForce(pC ? pC : 0);
+  simulation.setAirResistance(aB ? aB : 0);
+  return true;
 }

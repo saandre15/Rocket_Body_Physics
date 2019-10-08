@@ -3,17 +3,14 @@ import { Graph } from "./charts";
 var start = document.getElementById('start');
 var restart = document.getElementById('restart');
 var mass = document.getElementById('mass');
-var A = document.getElementById('a');
-var B = document.getElementById('b');
+var A = document.getElementById('A');
+var B = document.getElementById('B');
 var AirResToggle = document.getElementById('air_resistance');
 var ParchuteToggle = document.getElementById('parachute');
 var SimulationToggle = document.getElementById('simulation_toggle');
 var GraphToggle = document.getElementById('graph_toggle');
-var state = {
-    simulation: false,
-    air_resistance: false,
-    parachute: false,
-};
+var parachuteC = document.getElementById('c');
+var airResistanceB = document.getElementById('b');
 var rocket = new Rocket(0, 0);
 var simulation = new Simulation([rocket]);
 var graph = new Graph(simulation);
@@ -37,11 +34,11 @@ restart.addEventListener('click', function (e) {
     location.replace(location.href);
 });
 AirResToggle.addEventListener('click', function (e) {
-    state.air_resistance = !state.air_resistance;
+    simulation.toggleAirResistance();
     simulation.drawToggle();
 });
 ParchuteToggle.addEventListener('click', function (e) {
-    state.parachute = !state.parachute;
+    simulation.toggleParachute();
     simulation.drawToggle();
 });
 SimulationToggle.addEventListener('click', function (e) {
@@ -92,9 +89,18 @@ function setRocketValues() {
     var nMass = Number(mass.value);
     var nA = Number(A.value);
     var nB = Number(B.value);
+    var pC = Number(parachuteC.value);
+    var aB = Number(airResistanceB.value);
     if (!nMass || !nA || !nB) {
-        alert("Please make sure there is a valid number inputed into the mass, A, and B.");
-        return;
+        alert("Please make sure there is a number inputed into the mass, A, and B.");
+        return false;
+    }
+    if (isNaN(nMass) || isNaN(nA) || isNaN(nB) || isNaN(pC) || isNaN(aB)) {
+        alert("The inputs only allow numbers.");
+        return false;
     }
     rocket.setValues(nA, nB, nMass);
+    rocket.setParachuteDragForce(pC ? pC : 0);
+    simulation.setAirResistance(aB ? aB : 0);
+    return true;
 }

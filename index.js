@@ -262,17 +262,14 @@ __webpack_require__.r(__webpack_exports__);
 var start = document.getElementById('start');
 var restart = document.getElementById('restart');
 var mass = document.getElementById('mass');
-var A = document.getElementById('a');
-var B = document.getElementById('b');
+var A = document.getElementById('A');
+var B = document.getElementById('B');
 var AirResToggle = document.getElementById('air_resistance');
 var ParchuteToggle = document.getElementById('parachute');
 var SimulationToggle = document.getElementById('simulation_toggle');
 var GraphToggle = document.getElementById('graph_toggle');
-var state = {
-    simulation: false,
-    air_resistance: false,
-    parachute: false,
-};
+var parachuteC = document.getElementById('c');
+var airResistanceB = document.getElementById('b');
 var rocket = new _simulation__WEBPACK_IMPORTED_MODULE_0__["Rocket"](0, 0);
 var simulation = new _simulation__WEBPACK_IMPORTED_MODULE_0__["Simulation"]([rocket]);
 var graph = new _charts__WEBPACK_IMPORTED_MODULE_1__["Graph"](simulation);
@@ -296,11 +293,11 @@ restart.addEventListener('click', function (e) {
     location.replace(location.href);
 });
 AirResToggle.addEventListener('click', function (e) {
-    state.air_resistance = !state.air_resistance;
+    simulation.toggleAirResistance();
     simulation.drawToggle();
 });
 ParchuteToggle.addEventListener('click', function (e) {
-    state.parachute = !state.parachute;
+    simulation.toggleParachute();
     simulation.drawToggle();
 });
 SimulationToggle.addEventListener('click', function (e) {
@@ -351,11 +348,20 @@ function setRocketValues() {
     var nMass = Number(mass.value);
     var nA = Number(A.value);
     var nB = Number(B.value);
+    var pC = Number(parachuteC.value);
+    var aB = Number(airResistanceB.value);
     if (!nMass || !nA || !nB) {
-        alert("Please make sure there is a valid number inputed into the mass, A, and B.");
-        return;
+        alert("Please make sure there is a number inputed into the mass, A, and B.");
+        return false;
+    }
+    if (isNaN(nMass) || isNaN(nA) || isNaN(nB) || isNaN(pC) || isNaN(aB)) {
+        alert("The inputs only allow numbers.");
+        return false;
     }
     rocket.setValues(nA, nB, nMass);
+    rocket.setParachuteDragForce(pC ? pC : 0);
+    simulation.setAirResistance(aB ? aB : 0);
+    return true;
 }
 
 
@@ -450,11 +456,11 @@ var Rocket = /** @class */ (function (_super) {
         this.yB = yB;
         this.mass = mass;
     };
-    Rocket.prototype.setParachuteDragForce = function (b) {
-        this.parchuteB = b;
+    Rocket.prototype.setParachuteDragForce = function (c) {
+        this.parchuteC = c;
     };
-    Rocket.prototype.getParachuteB = function () {
-        return this.parchuteB;
+    Rocket.prototype.getParachuteC = function () {
+        return this.parchuteC;
     };
     Rocket.prototype.activateParachute = function () {
         this.parachuteMode = true;
@@ -471,9 +477,11 @@ var Rocket = /** @class */ (function (_super) {
 var Planet = /** @class */ (function () {
     function Planet(objs) {
         this.objs = objs;
+        this.enableAirResistance = false;
+        this.enableParachute = false;
         this.time = 0;
         this.gAccel = 0;
-        this.airResB = 0;
+        this.airResC = 0;
         this.velocities = new Array(this.objs.length);
         this.accelerations = new Array(this.objs.length);
         for (var i = 0; i < this.objs.length; i++) {
@@ -481,14 +489,26 @@ var Planet = /** @class */ (function () {
             this.accelerations[i] = 0;
         }
     }
+    Planet.prototype.toggleParachute = function () {
+        this.enableParachute = !this.enableParachute;
+    };
+    Planet.prototype.toggleAirRes = function () {
+        this.enableAirResistance = !this.enableAirResistance;
+    };
+    Planet.prototype.hasAirRes = function () {
+        return this.enableAirResistance;
+    };
+    Planet.prototype.hasParachute = function () {
+        return this.enableParachute;
+    };
     Planet.prototype.setGAccel = function (accel) {
         this.gAccel = accel;
     };
-    Planet.prototype.setAirResB = function (b) {
-        this.airResB = b;
+    Planet.prototype.setAirResC = function (c) {
+        this.airResC = c;
     };
     Planet.prototype.getAirRes = function (time) {
-        return this.airResB;
+        return this.airResC;
     };
     Planet.prototype.getObjs = function () {
         return this.objs;
@@ -514,13 +534,15 @@ var Planet = /** @class */ (function () {
         var obj = this.objs[index];
         var oForce = obj.getCurForceY();
         var gForce = obj.getMass() * this.gAccel;
-        var aForce = this.airResB ? -this.airResB * obj.getVeloY() : 0;
         var dForce = 0;
+        var aForce = 0;
         if (this.getObjs()[index] instanceof Rocket) {
             var rocket = this.getObjs()[index];
-            if (rocket.hasParachute())
-                dForce = -1 * rocket.getParachuteB() * this.getNetVelocity(index);
+            if (rocket.hasParachute() && this.enableParachute)
+                dForce = -1 * rocket.getParachuteC() * Math.pow(this.getNetVelocity(index), 2);
         }
+        if (this.enableAirResistance)
+            aForce = this.airResC ? -this.airResC * this.getNetVelocity(index) : 0;
         return oForce + gForce + aForce + dForce;
     };
     Planet.prototype.getObjNetAccelY = function (index) {
@@ -579,8 +601,6 @@ var Stars = /** @class */ (function () {
 
 var Simulation = /** @class */ (function () {
     function Simulation(objs) {
-        this.enableAirResistance = false;
-        this.enableParachute = false;
         this.earth = new Planet(objs);
         this.earth.setGAccel(-9.8);
         this.canvas = document.getElementById('simulation');
@@ -592,6 +612,15 @@ var Simulation = /** @class */ (function () {
         this.stars = new Stars();
         this.stars.arrange(this.canvas.width, this.canvas.height);
     }
+    Simulation.prototype.toggleParachute = function () {
+        this.earth.toggleParachute();
+    };
+    Simulation.prototype.toggleAirResistance = function () {
+        this.earth.toggleAirRes();
+    };
+    Simulation.prototype.setAirResistance = function (c) {
+        this.earth.setAirResC(c);
+    };
     Simulation.prototype.getEarth = function () {
         return this.earth;
     };
@@ -623,7 +652,7 @@ var Simulation = /** @class */ (function () {
             this.ctx.drawImage(cur.getSprite(), startPosX, startPosY - (position.getY() / scale), cur.getSprite().width, cur.getSprite().height);
             if (cur instanceof Rocket) {
                 var parachute = cur.getParachute();
-                if (cur.hasParachute())
+                if (cur.hasParachute() && this.earth.hasParachute())
                     this.ctx.drawImage(parachute, startPosX - 5, startPosY - ((position.getY() / scale)) - 30, parachute.width, parachute.height);
             }
         }
@@ -659,8 +688,8 @@ var Simulation = /** @class */ (function () {
         this.ctx.font = '20px Arial';
         this.ctx.fillStyle = "white";
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(this.enableAirResistance ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
-        this.ctx.fillText(this.enableParachute ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
+        this.ctx.fillText(this.earth.hasAirRes() ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
+        this.ctx.fillText(this.earth.hasParachute() ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
     };
     Simulation.prototype.draw = function () {
         var _this = this;
