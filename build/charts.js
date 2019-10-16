@@ -12,6 +12,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 import * as Chart from "chart.js";
+import { LinkedList, Node } from "./LinkedList";
 var Graph = /** @class */ (function () {
     function Graph(simulation) {
         this.simulation = simulation;
@@ -46,6 +47,12 @@ var Graph = /** @class */ (function () {
         var go = true;
         var inc = 0.1;
         var total = 0;
+        var yPosList = new LinkedList();
+        var yVelList = new LinkedList();
+        var yAccelList = new LinkedList();
+        var timeList = new LinkedList();
+        if (this.simulation.getEarth().hasParachute())
+            alert("Parachute graph will not have an animation as reallocating arrays and redrawing will be to slow!");
         var interval = setInterval(function () {
             var displacement = earth.getObjs()[0].getPos().getY();
             if (displacement < 0) {
@@ -56,13 +63,27 @@ var Graph = /** @class */ (function () {
                 pos_toggle.disabled = false;
                 vel_toggle.disabled = false;
                 accel_toggle.disabled = false;
+                if (_this.simulation.getEarth().hasParachute()) {
+                    _this.positionsY = yPosList.toDataArray();
+                    _this.velocitiesY = yVelList.toDataArray();
+                    _this.accelereationY = yAccelList.toDataArray();
+                    _this.time = timeList.toDataArray();
+                }
                 return;
             }
-            _this.positionsY.push(displacement);
-            _this.velocitiesY.push(earth.getNetVelocity(0));
-            _this.accelereationY.push(earth.getNetAcceleration(0));
-            _this.time.push(total);
-            _this.drawPosition();
+            if (_this.simulation.getEarth().hasParachute()) {
+                yPosList.add(new Node(displacement));
+                yVelList.add(new Node(earth.getNetVelocity(0)));
+                yAccelList.add(new Node(earth.getNetAcceleration(0)));
+                timeList.add(new Node(parseFloat(total.toFixed(2))));
+            }
+            else {
+                _this.positionsY.push(displacement);
+                _this.velocitiesY.push(earth.getNetVelocity(0));
+                _this.accelereationY.push(earth.getNetAcceleration(0));
+                _this.time.push(parseFloat(total.toFixed(2)));
+                _this.drawPosition();
+            }
             earth.setTime(total + inc);
             total += inc;
         }, 0.00000001);

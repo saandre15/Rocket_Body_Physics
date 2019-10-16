@@ -138,6 +138,7 @@ var Planet = /** @class */ (function () {
             this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i], this.velocities[i]);
             this.accelerations[i] = this.getObjNetAccelY(i);
             if (this.getNetVelocity(i) < 0 && cur instanceof Rocket)
+                //if(cur instanceof Rocket)
                 cur.activateParachute();
             var displaceY = pos.getY() + this.getNetVelocity(i);
             cur.setPos(new Point(pos.getX(), displaceY));
@@ -155,8 +156,10 @@ var Planet = /** @class */ (function () {
         var aForce = 0;
         if (this.getObjs()[index] instanceof Rocket) {
             var rocket = this.getObjs()[index];
-            if (rocket.hasParachute() && this.enableParachute)
-                dForce = -1 * rocket.getParachuteC() * Math.pow(this.getNetVelocity(index), 2);
+            if (rocket.hasParachute() && this.enableParachute) {
+                dForce = rocket.getParachuteC() * (this.getNetVelocity(index) * this.getNetVelocity(index));
+                // dForce = -1 * rocket.getParachuteC() * this.getNetVelocity(index) ;
+            }
         }
         if (this.enableAirResistance)
             aForce = this.airResC ? -this.airResC * this.getNetVelocity(index) : 0;

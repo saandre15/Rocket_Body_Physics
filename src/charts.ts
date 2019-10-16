@@ -1,5 +1,6 @@
 import { Simulation, Planet } from "./simulation";
 import * as Chart from "chart.js";
+import { LinkedList, Node } from "./LinkedList";
 
 export class Graph {
   private simulation: Simulation;
@@ -42,6 +43,12 @@ export class Graph {
     let go: boolean = true;
     let inc: number = 0.1;
     let total: number = 0;
+    const yPosList = new LinkedList<number>();
+    const yVelList = new LinkedList<number>();
+    const yAccelList = new LinkedList<number>();
+    const timeList = new LinkedList<number>();
+    if(this.simulation.getEarth().hasParachute())
+      alert("Parachute graph will not have an animation as reallocating arrays and redrawing will be to slow!")
     const interval = setInterval(() => {
       const displacement: number = earth.getObjs()[0].getPos().getY();
       if(displacement < 0) {
@@ -52,13 +59,27 @@ export class Graph {
         pos_toggle.disabled = false;
         vel_toggle.disabled = false;
         accel_toggle.disabled = false;
+        if(this.simulation.getEarth().hasParachute()) {
+          this.positionsY = yPosList.toDataArray();
+          this.velocitiesY = yVelList.toDataArray();
+          this.accelereationY = yAccelList.toDataArray();
+          this.time = timeList.toDataArray();
+        }
         return;
       }
-      this.positionsY.push(displacement);
-      this.velocitiesY.push(earth.getNetVelocity(0));
-      this.accelereationY.push(earth.getNetAcceleration(0));
-      this.time.push(total);
-      this.drawPosition();
+      if(this.simulation.getEarth().hasParachute()) {
+        yPosList.add(new Node(displacement));
+        yVelList.add(new Node(earth.getNetVelocity(0)));
+        yAccelList.add(new Node(earth.getNetAcceleration(0)));
+        timeList.add(new Node(parseFloat(total.toFixed(2))));
+      }
+      else {
+        this.positionsY.push(displacement);
+        this.velocitiesY.push(earth.getNetVelocity(0));
+        this.accelereationY.push(earth.getNetAcceleration(0));
+        this.time.push(parseFloat(total.toFixed(2)));
+        this.drawPosition();
+      }
       earth.setTime(total + inc);
       total += inc;
     }, 0.00000001);

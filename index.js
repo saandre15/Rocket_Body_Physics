@@ -86,6 +86,70 @@
 /************************************************************************/
 /******/ ({
 
+/***/ "./build/LinkedList.js":
+/*!*****************************!*\
+  !*** ./build/LinkedList.js ***!
+  \*****************************/
+/*! exports provided: LinkedList, Node */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "LinkedList", function() { return LinkedList; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Node", function() { return Node; });
+var LinkedList = /** @class */ (function () {
+    function LinkedList() {
+        this.head = null;
+    }
+    LinkedList.prototype.add = function (node) {
+        if (this.head === null) {
+            this.head = node;
+            this.head.length = 0;
+        }
+        else {
+            node.tail = this.head;
+            var length_1 = this.head.length;
+            this.head = node;
+            this.head.length = length_1 + 1;
+        }
+    };
+    LinkedList.prototype.toArray = function () {
+        var array = new Array(this.head.length).fill(null);
+        var node = this.head.tail;
+        var counter = 0;
+        while (node.tail !== null) {
+            array[this.head.length - counter] = node;
+            node = node.tail;
+            counter++;
+        }
+        return array;
+    };
+    LinkedList.prototype.toDataArray = function () {
+        var array = new Array(this.head.length);
+        var node = this.head.tail;
+        var counter = 0;
+        while (node.tail !== null) {
+            array[this.head.length - counter] = node.data;
+            node = node.tail;
+            counter++;
+        }
+        return array;
+    };
+    return LinkedList;
+}());
+
+var Node = /** @class */ (function () {
+    function Node(data) {
+        this.data = data;
+        this.tail = null;
+    }
+    return Node;
+}());
+
+
+
+/***/ }),
+
 /***/ "./build/charts.js":
 /*!*************************!*\
   !*** ./build/charts.js ***!
@@ -98,6 +162,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Graph", function() { return Graph; });
 /* harmony import */ var chart_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! chart.js */ "./node_modules/chart.js/dist/Chart.js");
 /* harmony import */ var chart_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(chart_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _LinkedList__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LinkedList */ "./build/LinkedList.js");
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -111,6 +176,7 @@ var __extends = (undefined && undefined.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+
 
 var Graph = /** @class */ (function () {
     function Graph(simulation) {
@@ -146,6 +212,12 @@ var Graph = /** @class */ (function () {
         var go = true;
         var inc = 0.1;
         var total = 0;
+        var yPosList = new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["LinkedList"]();
+        var yVelList = new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["LinkedList"]();
+        var yAccelList = new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["LinkedList"]();
+        var timeList = new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["LinkedList"]();
+        if (this.simulation.getEarth().hasParachute())
+            alert("Parachute graph will not have an animation as reallocating arrays and redrawing will be to slow!");
         var interval = setInterval(function () {
             var displacement = earth.getObjs()[0].getPos().getY();
             if (displacement < 0) {
@@ -156,13 +228,27 @@ var Graph = /** @class */ (function () {
                 pos_toggle.disabled = false;
                 vel_toggle.disabled = false;
                 accel_toggle.disabled = false;
+                if (_this.simulation.getEarth().hasParachute()) {
+                    _this.positionsY = yPosList.toDataArray();
+                    _this.velocitiesY = yVelList.toDataArray();
+                    _this.accelereationY = yAccelList.toDataArray();
+                    _this.time = timeList.toDataArray();
+                }
                 return;
             }
-            _this.positionsY.push(displacement);
-            _this.velocitiesY.push(earth.getNetVelocity(0));
-            _this.accelereationY.push(earth.getNetAcceleration(0));
-            _this.time.push(total);
-            _this.drawPosition();
+            if (_this.simulation.getEarth().hasParachute()) {
+                yPosList.add(new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["Node"](displacement));
+                yVelList.add(new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["Node"](earth.getNetVelocity(0)));
+                yAccelList.add(new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["Node"](earth.getNetAcceleration(0)));
+                timeList.add(new _LinkedList__WEBPACK_IMPORTED_MODULE_1__["Node"](parseFloat(total.toFixed(2))));
+            }
+            else {
+                _this.positionsY.push(displacement);
+                _this.velocitiesY.push(earth.getNetVelocity(0));
+                _this.accelereationY.push(earth.getNetAcceleration(0));
+                _this.time.push(parseFloat(total.toFixed(2)));
+                _this.drawPosition();
+            }
             earth.setTime(total + inc);
             total += inc;
         }, 0.00000001);
@@ -521,6 +607,7 @@ var Planet = /** @class */ (function () {
             this.velocities[i] = this.getObjNetVelY(i, seconds, this.time, this.accelerations[i], this.velocities[i]);
             this.accelerations[i] = this.getObjNetAccelY(i);
             if (this.getNetVelocity(i) < 0 && cur instanceof Rocket)
+                //if(cur instanceof Rocket)
                 cur.activateParachute();
             var displaceY = pos.getY() + this.getNetVelocity(i);
             cur.setPos(new Point(pos.getX(), displaceY));
@@ -538,8 +625,10 @@ var Planet = /** @class */ (function () {
         var aForce = 0;
         if (this.getObjs()[index] instanceof Rocket) {
             var rocket = this.getObjs()[index];
-            if (rocket.hasParachute() && this.enableParachute)
-                dForce = -1 * rocket.getParachuteC() * Math.pow(this.getNetVelocity(index), 2);
+            if (rocket.hasParachute() && this.enableParachute) {
+                dForce = rocket.getParachuteC() * (this.getNetVelocity(index) * this.getNetVelocity(index));
+                // dForce = -1 * rocket.getParachuteC() * this.getNetVelocity(index) ;
+            }
         }
         if (this.enableAirResistance)
             aForce = this.airResC ? -this.airResC * this.getNetVelocity(index) : 0;
@@ -697,10 +786,6 @@ var Simulation = /** @class */ (function () {
         var seconds = 0.0;
         var prevDist = 0;
         var interval = setInterval(function () {
-            //if(this.getYDisplacement(seconds) < 0) {
-            //  console.log("Clear interval");
-            //  clearInterval(interval);
-            //}
             seconds += inc;
             _this.clearCanvas();
             _this.drawStars();
