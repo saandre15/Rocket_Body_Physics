@@ -1,3 +1,6 @@
+/**
+ * @classdesc This is the base class for every object on a planet
+ */
 class Object {
   protected sprite: HTMLImageElement;
   protected position: Point;
@@ -12,32 +15,61 @@ class Object {
     this.position = new Point(x, y);
     this.sprite.addEventListener('load', () => this.ready = true);
   }
+  /**
+   * @method getSprite Read access to the sprite
+   */
   public getSprite() {
     return this.sprite;
   }
+  /**
+   * @method getCurForceY Default current force of all object
+   */
   public getCurForceY(): number {
     return -1;
   }
+  /**
+   * @method getAccelY Derives the acceleration from the current force
+   */
   public getAccelY(): number {
     return this.getCurForceY() / this.mass;
   }
+  /**
+   * @method getVeloY Drives the velocity from the current force
+   */
   public getVeloY(): number {
     return (this.getCurForceY() * this.time) / this.mass;
   }
+  /**
+   * @method getMass Read access to the mass
+   */
   public getMass(): number {
     return this.mass;
   }
+  /**
+   * 
+   * @param point Sets the Position based of the point at a point in time
+   */
   public setPos(point: Point): void {
     this.position = point;
   }
+  /**
+   * @method getPos read access to to the position at a point in time
+   */
   public getPos(): Point {
     return this.position;
   }
+  /**
+   * 
+   * @param seconds Time
+   * @method setTime sets the time
+   */
   public setTime(seconds: number) {
     this.time = seconds;
   }
 }
-
+/**
+ * @classdesc A Rocket Object
+ */
 export class Rocket extends Object {
   protected yA: number;
   protected yB: number;
@@ -53,15 +85,28 @@ export class Rocket extends Object {
     this.parachute = parachute;
     this.parachuteMode = false;
   }
+  /**
+   * @override
+   */
   public getCurForceY(): number {
     if(!this.yA || !this.yB || !this.mass)
       alert("Please set the A, B, and Mass.");
+      /**
+       * @formula This is the force curve equation for the rocket
+       */
     const force: number = Math.sqrt(this.yA - (this.yB * this.time));
     if(isNaN(force))
       return 0;
     else
       return force;
   }
+  /**
+   * 
+   * @param yA A
+   * @param yB B
+   * @param mass MASS
+   * @method setValues setter for the equations 
+   */
   public setValues(yA: number, yB: number, mass: number) {
     this.yA = yA;
     this.yB = yB;
@@ -83,7 +128,9 @@ export class Rocket extends Object {
     return this.parachuteMode;
   }
 }
-
+/**
+ * @classdesc This is the planet in which all objects in the simulation will be attrached to.
+ */
 export class Planet {
   private gAccel: number;
   private airResC: number;

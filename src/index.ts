@@ -1,6 +1,8 @@
 import {  Simulation, Rocket } from "./simulation";
 import { Graph } from "./charts";
 
+// These are the HTML Buttons and Inputs
+
 const start: HTMLButtonElement = document.getElementById('start') as HTMLButtonElement;
 const restart: HTMLButtonElement = document.getElementById('restart') as HTMLButtonElement;
 const mass: HTMLInputElement = document.getElementById('mass') as HTMLInputElement;
@@ -13,6 +15,8 @@ const GraphToggle: HTMLButtonElement = document.getElementById('graph_toggle') a
 const parachuteC: HTMLInputElement = document.getElementById('c') as HTMLInputElement;
 const airResistanceB: HTMLInputElement = document.getElementById('b') as HTMLInputElement;
 
+// This is where the class are initilized
+
 const rocket = new Rocket(0, 0);
 const simulation = new Simulation([rocket]);
 const graph = new Graph(simulation);
@@ -20,6 +24,7 @@ const graph = new Graph(simulation);
 window.addEventListener('load', (e: Event) => {
   simulation.init();
 })
+
 
 start.addEventListener('click', (e: MouseEvent) => {
   e.preventDefault();
