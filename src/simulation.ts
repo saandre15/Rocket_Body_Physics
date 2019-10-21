@@ -16,31 +16,31 @@ class Object {
     this.sprite.addEventListener('load', () => this.ready = true);
   }
   /**
-   * @method getSprite Read access to the sprite
+   * @description getSprite Read access to the sprite
    */
   public getSprite() {
     return this.sprite;
   }
   /**
-   * @method getCurForceY Default current force of all object
+   * @description getCurForceY Default current force of all object
    */
   public getCurForceY(): number {
     return -1;
   }
   /**
-   * @method getAccelY Derives the acceleration from the current force
+   * @description getAccelY Derives the acceleration from the current force
    */
   public getAccelY(): number {
     return this.getCurForceY() / this.mass;
   }
   /**
-   * @method getVeloY Drives the velocity from the current force
+   * @description getVeloY Drives the velocity from the current force
    */
   public getVeloY(): number {
     return (this.getCurForceY() * this.time) / this.mass;
   }
   /**
-   * @method getMass Read access to the mass
+   * @description getMass Read access to the mass
    */
   public getMass(): number {
     return this.mass;
@@ -53,7 +53,7 @@ class Object {
     this.position = point;
   }
   /**
-   * @method getPos read access to to the position at a point in time
+   * @description getPos read access to to the position at a point in time
    */
   public getPos(): Point {
     return this.position;
@@ -61,7 +61,7 @@ class Object {
   /**
    * 
    * @param seconds Time
-   * @method setTime sets the time
+   * @description setTime sets the time
    */
   public setTime(seconds: number) {
     this.time = seconds;
@@ -105,7 +105,7 @@ export class Rocket extends Object {
    * @param yA A
    * @param yB B
    * @param mass MASS
-   * @method setValues setter for the equations 
+   * @description setValues setter for the equations 
    */
   public setValues(yA: number, yB: number, mass: number) {
     this.yA = yA;
@@ -154,30 +154,64 @@ export class Planet {
       this.accelerations[i] = 0;
     }
   }
+  /**
+   * @description toggleParachute Toggle if the planet forces the object to have parachute
+   */
   public toggleParachute(): void {
     this.enableParachute = !this.enableParachute;
   }
+  /**
+   * @description toggleAirRes Toggle if the planet has air resistance
+   */
   public toggleAirRes(): void {
     this.enableAirResistance = !this.enableAirResistance;
   }
+  /**
+   * @description hasAirRes read access to see if planet has air resistance
+   */
   public hasAirRes(): boolean {
     return this.enableAirResistance;
   }
+  /**
+   * @description hasParachute read access to see if the planet has the object deploy parachute
+   */
   public hasParachute(): boolean {
     return this.enableParachute;
   }
+  /**
+   * 
+   * @param accel The acceleration the planet gravity
+   * @description setGAccel Setter for the planet gravity acceleration
+   */
   public setGAccel(accel: number): void {
     this.gAccel = accel;
   }
+  /**
+   * @param c The c variable for the formula of the force trust equation
+   * @description setAirResC Setter for the force trust equation C var
+   */
   public setAirResC(c: number): void {
     this.airResC = c;
   }
+  /**
+   * 
+   * @param time The time in seconds
+   * @description getAirRes Read access to the Air Resistance C in the force trust equation
+   */
   public getAirRes(time: number): number {
     return this.airResC;
   }
+  /**
+   * @description getObjs Get all objects within the planet attractional force
+   */
   public getObjs(): Object[] {
     return this.objs;
   }
+  /**
+   * 
+   * @param seconds The time in terms of seconds
+   * @description setTime Set the time and calculate the velocity and acceleration at that time
+   */
   public setTime(seconds: number): void {
     for (let i = 0; i < this.objs.length; i++) {
       const cur: Object = this.objs[i];
@@ -193,11 +227,25 @@ export class Planet {
       this.time = seconds;
     }
   }
+  /**
+   * @description getTime Read access to the time at the moment of being called
+   */
   public getTime(): number {
     return this.time;
   }
+  /**
+   * 
+   * @param index The object index within the Object array
+   * @description getObjNetForceY 
+   */
   public getObjNetForceY(index: number): number {
     const obj: Object = this.objs[index];
+    /**
+     * @var oForce The Objects Force Product from within the object
+     * @var gForce The Gravity Force from the planet 
+     * @var dForce The Drag Force of the parachute
+     * @var aForce The Air Resistance force from the the planet atmosphere
+     */
     const oForce: number = obj.getCurForceY();
     const gForce: number = obj.getMass() * this.gAccel;
     let dForce: number = 0;
@@ -205,40 +253,82 @@ export class Planet {
     if(this.getObjs()[index] instanceof Rocket) {
       const rocket: Rocket = this.getObjs()[index] as Rocket;
       if(rocket.hasParachute() && this.enableParachute) {
+        /**
+         * @formula Drag Force = cv^2
+         */
         dForce =  rocket.getParachuteC() * (this.getNetVelocity(index) * this.getNetVelocity(index));
-        // dForce = -1 * rocket.getParachuteC() * this.getNetVelocity(index) ;
       }
     }
     if(this.enableAirResistance)
+    /**
+     * @formula Air Resistance Force = bv
+     */
       aForce = this.airResC ? -this.airResC * this.getNetVelocity(index) : 0;
     return oForce + gForce + aForce + dForce;
   }
+  /**
+   * 
+   * @param index The index within the object array
+   * @description getObjNetAccelY Read access to the object acceleration
+   */
   public getObjNetAccelY(index: number): number {
     const obj: Object = this.objs[index];
     const nForce: number = this.getObjNetForceY(index);
     const accelY: number = nForce / obj.getMass();
     return accelY;
   }
-  // this wont work because it taking the net force at this time and mutiplying with all time
-  // return (nForce * this.time) / obj.getMass();
-  public getObjNetVelY(index: number, time: number, prevTime: number, prevAccel: number, prevVel: number): number {
-    // take the time inc * ( ( accel of now + accel of next inc )  / 2)
+  /**
+   * 
+   * @param index The object index within the objects array
+   * @param time The time within seconds
+   * @param prevTime The previous time when this function was called
+   * @param prevAccel The previous acceleration when this function was called
+   * @param prevVel The previous velocity when this function was called
+   * @description getObjNetVelY Write access to derive the velocity.
+   */
+  public getObjNetVelY(
+    index: number, 
+    time: number, 
+    prevTime: number, 
+    prevAccel: number, 
+    prevVel: number): number {
     this.objs[index].setTime(time);
+    /**
+     * @description Uses derivates to calculate the velocity from the time and acceleration 
+     * plus the previous velocity
+     */
     const cur: number = ( time - prevTime ) * ((this.getObjNetAccelY(index) + prevAccel) / 2) + prevVel;
     return cur;
   }
+  /**
+   * 
+   * @param index The object index within the object arrays
+   * @description getNetVelocity Read access to the net velocity of an object
+   */
   public getNetVelocity(index: number): number {
     return this.velocities[index];
   }
+  /**
+   * 
+   * @param index The object index within the object arrays
+   * @description getNetAcceleration Read access to the net acceleration of an object
+   */
   public getNetAcceleration(index: number): number {
     return this.accelerations[index];
   }
+  /**
+   * 
+   * @param index The object index within the object arrays
+   * @description  Read access to the net velocity of an object
+   */
   public getNetDistance(index: number): number {
     return this.getObjs()[index].getPos().getY();
   }
 }
 
-
+/**
+ * @classdesc Drawing Logic for the stars
+ */
 export class Stars {
   private ready: boolean;
   private image: HTMLImageElement;
@@ -250,6 +340,11 @@ export class Stars {
     this.image.src = "https://drive.google.com/uc?export=view&id=1ACupvOABzxwP1AL8EvL-iyFokYMPHNIN";
     this.image.addEventListener('load' , () => this.ready = true);
   }
+  /**
+   * 
+   * @param width The width of the canvas
+   * @param height The height of the canvas
+   */
   public arrange(width: number, height: number): void {
     for(let i = 0 ; i < width; i++) {
       for(let e = 0; e < height; e++) {
@@ -260,14 +355,23 @@ export class Stars {
       }
     }
   }
+  /**
+   * @description Access to the positions
+   */
   public getPositions(): Point[] {
     return this.positions;
   }
+  /**
+   * @description Access to Sprite in the form of an HTMLImageElement
+   */
   public getImage(): HTMLImageElement {
     return this.image;
   }
 }
 
+/**
+ * @classdesc Creates the simulation where it will run experiments on the planet 
+ */
 export class Simulation {
   private earth: Planet;
   private canvas: HTMLCanvasElement;
@@ -285,18 +389,35 @@ export class Simulation {
     this.stars = new Stars();
     this.stars.arrange(this.canvas.width, this.canvas.height);
   }
+  /**
+   * @description Access to earth parachute toggle
+   */
   public toggleParachute(): void {
     this.earth.toggleParachute();
   }
+  /**
+   * @description Access to earth air resistance toggle
+   */
   public toggleAirResistance(): void {
     this.earth.toggleAirRes();
   }
+  /**
+   * 
+   * @param c Earth air resistance C
+   * @description Setter for Air resistance C on Earth
+   */
   public setAirResistance(c: number) {
     this.earth.setAirResC(c);
   }
+  /**
+   * @description return the planet object
+   */
   public getEarth(): Planet {
     return this.earth;
   }
+  /**
+   * @description Restart The Canvas
+   */
   public resetCanvas() : void {
     this.canvas = document.getElementById('simulation') as HTMLCanvasElement;
     const w: number = this.canvas.clientWidth;
@@ -305,9 +426,15 @@ export class Simulation {
     this.canvas.height = h;
     this.ctx = this.canvas.getContext('2d');
   }
+  /**
+   * @description Clear the Canvas
+   */
   private clearCanvas(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
+  /**
+   * @description Draw the stars
+   */
   private drawStars(): void {
     const positions: Point[] = this.stars.getPositions();
     for(let i = 0; i < positions.length; i++) {
@@ -315,6 +442,9 @@ export class Simulation {
       this.ctx.drawImage(this.stars.getImage(), cur.getX(), cur.getY(), 10, 10);
     }
   }
+  /**
+   * Draws the objects positions
+   */
   private drawPosition(): void {
     const startPosX = (this.canvas.width / 10) * 4.5;
     const startPosY = (this.canvas.height / 10) * 7;
@@ -330,12 +460,19 @@ export class Simulation {
       }
     }
   }
+  /**
+   * @description Draws the Landscape
+   */
   private drawLandscape() {
     const startPosX = (this.canvas.width / 10) * 4.5;
     const startPosY = (this.canvas.height / 10) * 7;
     this.ctx.fillStyle = "green";
     this.ctx.fillRect(0, startPosY + 18, this.canvas.width, this.canvas.height);
   }
+  /**
+   * @description Draw the calculations on the side of the canvas
+   * @param obj The index within the object array
+   */
   private drawCalc(obj: number) {
     const textPlacementX: number = (this.canvas.width / 30);
     const textPlacementY: number = (this.canvas.height / 10);
@@ -351,6 +488,9 @@ export class Simulation {
     this.ctx.fillText("Acceleration[Y]", textPlacementX, textPlacementY + 180);
     this.ctx.fillText(this.earth.getNetAcceleration(obj) + "(m/s^2)", textPlacementX, textPlacementY + 210);
   }
+  /**
+   * @description Draws Air Resistance and Parachute Toggled State
+   */
   public drawToggle() {
     this.clearCanvas();
     this.drawStars();
@@ -364,10 +504,16 @@ export class Simulation {
     this.ctx.fillText(this.earth.hasAirRes() ? "Air Resistance ON" : "Air Resistance OFF", textPlacementX, textPlacementY + 0);
     this.ctx.fillText(this.earth.hasParachute() ? "Parachute ON" : "Parachute OFF", textPlacementX, textPlacementY + 30);
   }
+  /**
+   * @description The actual drawing function
+   */
   private draw(): void {
     const inc: number = 0.1;
     let seconds: number = 0.0;
     let prevDist: number = 0;
+    /**
+     * @description The ASYNC while loop
+     */
     const interval = setInterval(() => {
       seconds += inc;
       this.clearCanvas();
@@ -391,12 +537,18 @@ export class Simulation {
     }, inc);
     return;
   }
+  /**
+   * @description Initializes the class after DOM loads
+   */
   public init() {
     this.drawStars();
     this.drawPosition();
     this.drawLandscape();
     this.drawToggle();
   }
+  /**
+   * @description Starts the simulation
+   */
   public start() {
     const startPosX = (this.canvas.width / 10) * 4.6;
     const startPosY = (this.canvas.height / 10) * 3;
@@ -428,7 +580,9 @@ export class Simulation {
     }, 4000);
   }
 }
-
+/**
+ * @classdesc The X-Y coordinate
+ */
 export class Point {
   private x: number;
   private y: number;

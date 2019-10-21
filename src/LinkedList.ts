@@ -1,3 +1,6 @@
+/**
+ * @classdesc Using this because its faster than an array
+ */
 export class LinkedList<T> {
     private head: Node<T>;
     constructor() {

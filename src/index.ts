@@ -15,13 +15,14 @@ const GraphToggle: HTMLButtonElement = document.getElementById('graph_toggle') a
 const parachuteC: HTMLInputElement = document.getElementById('c') as HTMLInputElement;
 const airResistanceB: HTMLInputElement = document.getElementById('b') as HTMLInputElement;
 
-// This is where the class are initilized
+// This is where the class are preinitializes before the DOM loads
 
 const rocket = new Rocket(0, 0);
 const simulation = new Simulation([rocket]);
 const graph = new Graph(simulation);
 
 window.addEventListener('load', (e: Event) => {
+  // This is where the classes initializes after the DOM loads
   simulation.init();
 })
 
