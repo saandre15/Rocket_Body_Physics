@@ -1,2 +1,2 @@
 # Rocket Simulation
-A graphical simulaltion of a rocket created in Typescript, CSS, and HTML.
+A graphical simulation of a rocket in a planetary atmosphere created in Typescript, CSS, and HTML.
